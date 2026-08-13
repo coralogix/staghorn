@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # changesets pushes the version branch and tags
+  pull-requests: write # and opens the "Version Packages" PR
+  id-token: write # OIDC, for provenance once this publishes to public npm
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Authenticate to the internal registry
+        # Internal phase only. At the open-source flip this whole step is deleted and
+        # replaced by npm Trusted Publishing (OIDC), which needs no token at all -
+        # publishConfig moves to registry.npmjs.org with provenance: true.
+        run: |
+          cat >> "$HOME/.npmrc" <<'NPMRC'
+          @cx:registry=https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/
+          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:_authToken=${NPM_TOKEN}
+          NPMRC
+        env:
+          NPM_TOKEN: ${{ secrets.JFROG_NPM_TOKEN }}
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:pkg
+
+      - name: Version or publish
+        # Opens a "Version Packages" PR when changesets are pending; publishes when
+        # that PR is merged. Never both in one run.
+        uses: changesets/action@v1
+        with:
+          version: npm run changeset -- version
+          publish: npm run release
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.JFROG_NPM_TOKEN }}
