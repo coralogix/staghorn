@@ -8,8 +8,10 @@ import {
   ROUTE_SCHEMA_VERSION,
   createFileRouteStore,
   isPidAlive,
+  resolveWatchStrategy,
   type RouteInput,
   type RouteStore,
+  type WatchStrategy,
 } from './routes';
 
 describe('createFileRouteStore', () => {
@@ -197,7 +199,70 @@ describe('createFileRouteStore.prune', () => {
   });
 });
 
-describe('createFileRouteStore.watch', () => {
+describe('resolveWatchStrategy', () => {
+  // libuv's Windows fs-event backend asserts and ABORTS THE PROCESS when handed a
+  // filename that does not share the watched directory's prefix, and an 8.3 short
+  // path is enough to cause it. It killed two CI workers outright before this
+  // existed. A shared daemon must not be abortable by a filesystem event.
+  it('never uses the native watcher on Windows', () => {
+    expect(resolveWatchStrategy('auto', 'win32')).toBe('poll');
+  });
+
+  it('uses the native watcher elsewhere', () => {
+    expect(resolveWatchStrategy('auto', 'darwin')).toBe('native');
+    expect(resolveWatchStrategy('auto', 'linux')).toBe('native');
+  });
+
+  it('honours an explicit strategy on every platform', () => {
+    expect(resolveWatchStrategy('native', 'win32')).toBe('native');
+    expect(resolveWatchStrategy('off', 'linux')).toBe('off');
+  });
+});
+
+describe('createFileRouteStore.watch (polling)', () => {
+  // Forced rather than platform-dependent, so the strategy Windows actually uses is
+  // exercised on the machines most contributors work on.
+  it('notices a new route by directory mtime', async () => {
+    const { store } = harness({ watchStrategy: 'poll', watchPollIntervalMs: 20 });
+    let calls = 0;
+    const stop = store.watch(() => {
+      calls++;
+    });
+    try {
+      await store.upsert(route({ routeKey: 'polled.myapp' }));
+      await waitFor(() => calls >= 1);
+    } finally {
+      stop();
+    }
+  });
+
+  it('stops polling after unsubscribe', async () => {
+    const { store } = harness({ watchStrategy: 'poll', watchPollIntervalMs: 20 });
+    let calls = 0;
+    store.watch(() => {
+      calls++;
+    })();
+    await store.upsert(route({ routeKey: 'ignored.myapp' }));
+    await settle(120);
+    expect(calls).toBe(0);
+  });
+
+  it('is inert when watching is off', async () => {
+    const { store } = harness({ watchStrategy: 'off' });
+    let calls = 0;
+    const stop = store.watch(() => {
+      calls++;
+    });
+    await store.upsert(route({ routeKey: 'quiet.myapp' }));
+    await settle(80);
+    stop();
+    expect(calls).toBe(0);
+  });
+});
+
+// Native watching only. On Windows this strategy is never selected, and forcing it
+// there would re-introduce the libuv abort.
+describe.skipIf(process.platform === 'win32')('createFileRouteStore.watch', () => {
   // The watch is an optimisation over the daemon's staleness refresh, not the only
   // path - which is why the generous budget here is acceptable rather than a
   // papered-over flake. macOS backs directory watches with FSEvents, whose arming
@@ -254,11 +319,15 @@ function harness({
   isAlive,
   now,
   watchDebounceMs,
+  watchStrategy,
+  watchPollIntervalMs,
   createDir = true,
 }: {
   isAlive?: (pid: number) => boolean;
   now?: () => number;
   watchDebounceMs?: number;
+  watchStrategy?: WatchStrategy;
+  watchPollIntervalMs?: number;
   createDir?: boolean;
 } = {}): {
   store: RouteStore;
@@ -277,6 +346,8 @@ function harness({
     ...(isAlive ? { isAlive } : {}),
     ...(now ? { now } : {}),
     ...(watchDebounceMs === undefined ? {} : { watchDebounceMs }),
+    ...(watchStrategy ? { watchStrategy } : {}),
+    ...(watchPollIntervalMs === undefined ? {} : { watchPollIntervalMs }),
   });
   return { store, dir, logger };
 }

@@ -12,6 +12,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   watch,
   type FSWatcher,
 } from 'node:fs';
@@ -84,9 +85,42 @@ export interface RouteStoreOptions {
   readonly logger?: Logger;
   /** Coalescing window for `watch`. */
   readonly watchDebounceMs?: number;
+  /**
+   * How changes are noticed. 'auto' picks `poll` on Windows and `native` elsewhere -
+   * see {@link resolveWatchStrategy}.
+   */
+  readonly watchStrategy?: WatchStrategy;
+  readonly watchPollIntervalMs?: number;
 }
 
+export type WatchStrategy = 'auto' | 'native' | 'poll' | 'off';
+
 const DEFAULT_WATCH_DEBOUNCE_MS = 40;
+const DEFAULT_WATCH_POLL_INTERVAL_MS = 250;
+
+/**
+ * `fs.watch` is not used on Windows.
+ *
+ * libuv's Windows fs-event backend asserts and ABORTS THE PROCESS when the filename
+ * it is handed does not share the watched directory's prefix
+ * (`!_wcsnicmp(filename, dir, dirlen)`, src/win/fs-event.c). An 8.3 short path in the
+ * watched directory is enough to trigger it, and temp directories on Windows
+ * routinely have one (`RUNNER~1`, `DOR~1.PEL`). It is not catchable: the process dies.
+ *
+ * A shared daemon that can be aborted by a filesystem event is not acceptable, and
+ * the watch is only an optimisation - the daemon already re-reads its routing table
+ * on staleness, which is the correctness path. So Windows polls the directory mtime
+ * instead. Every write here is tmp-file + rename, so the directory mtime always moves.
+ */
+export function resolveWatchStrategy(
+  strategy: WatchStrategy,
+  platform: NodeJS.Platform = process.platform,
+): Exclude<WatchStrategy, 'auto'> {
+  if (strategy !== 'auto') {
+    return strategy;
+  }
+  return platform === 'win32' ? 'poll' : 'native';
+}
 
 export function createFileRouteStore({
   dir = routesDir,
@@ -94,6 +128,8 @@ export function createFileRouteStore({
   now = Date.now,
   logger = silentLogger,
   watchDebounceMs = DEFAULT_WATCH_DEBOUNCE_MS,
+  watchStrategy = 'auto',
+  watchPollIntervalMs = DEFAULT_WATCH_POLL_INTERVAL_MS,
 }: RouteStoreOptions = {}): RouteStore {
   return {
     read: async () => snapshot(await readAllAsync(dir(), logger)),
@@ -188,6 +224,10 @@ export function createFileRouteStore({
     },
 
     watch: (onChange) => {
+      const strategy = resolveWatchStrategy(watchStrategy);
+      if (strategy === 'off') {
+        return () => {};
+      }
       const directory = dir();
       try {
         mkdirSync(directory, { recursive: true });
@@ -195,21 +235,45 @@ export function createFileRouteStore({
         logger.warn('could not create state dir for watching', { error: errorMessage(err) });
         return () => {};
       }
-      let timer: NodeJS.Timeout | null = null;
-      let watcher: FSWatcher;
+
+      let debounce: NodeJS.Timeout | null = null;
       const fire = (): void => {
         // Coalesce: an atomic write is a create plus a rename, and a prune of N
         // routes is N unlinks. Without this the daemon reloads its table several
         // times for one logical change.
-        if (timer) {
-          clearTimeout(timer);
+        if (debounce) {
+          clearTimeout(debounce);
         }
-        timer = setTimeout(() => {
-          timer = null;
+        debounce = setTimeout(() => {
+          debounce = null;
           onChange();
         }, watchDebounceMs);
-        timer.unref?.();
+        debounce.unref?.();
       };
+      const clearDebounce = (): void => {
+        if (debounce) {
+          clearTimeout(debounce);
+          debounce = null;
+        }
+      };
+
+      if (strategy === 'poll') {
+        let previous = directoryMtime(directory);
+        const poller = setInterval(() => {
+          const current = directoryMtime(directory);
+          if (current !== previous) {
+            previous = current;
+            fire();
+          }
+        }, watchPollIntervalMs);
+        poller.unref?.();
+        return () => {
+          clearInterval(poller);
+          clearDebounce();
+        };
+      }
+
+      let watcher: FSWatcher;
       try {
         watcher = watch(directory, { persistent: false }, fire);
       } catch (err) {
@@ -220,13 +284,26 @@ export function createFileRouteStore({
         logger.warn('state dir watcher failed', { error: errorMessage(err) });
       });
       return () => {
-        if (timer) {
-          clearTimeout(timer);
-        }
+        clearDebounce();
         watcher.close();
       };
     },
   };
+}
+
+/**
+ * Directory mtime, or -1 when it cannot be read.
+ *
+ * Sufficient as a change signal because every write in this module is tmp-file +
+ * rename: both operations alter the directory's entry list, so its mtime always
+ * moves. Editing a route file in place would not be detected, and nothing does that.
+ */
+function directoryMtime(directory: string): number {
+  try {
+    return statSync(directory).mtimeMs;
+  } catch {
+    return -1;
+  }
 }
 
 /**
