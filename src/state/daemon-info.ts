@@ -136,23 +136,39 @@ export function liveDaemonInfo(
   return store.read().then((info) => (info && isAlive(info.pid) ? info : null));
 }
 
-/** True when this daemon belongs to the current OS user. */
+/** True when this daemon is POSITIVELY owned by the current OS user. */
 export function isOwnedByCurrentUser(info: DaemonInfo): boolean {
   return isCurrentUid(info.uid);
 }
 
 /**
- * True when a uid is this process's.
+ * True when a uid is positively this process's: both sides known and equal.
  *
- * Unknown ownership on either side is NOT treated as "mine". The safe direction is
- * to leave a daemon alone: adopting one that might belong to another user is how
- * you end up shutting down a colleague's dev environment. Windows reports no uid
- * at all, so there both sides are null and this is false - which costs a shared
- * daemon between two Windows users and buys never stealing one.
+ * Use this to CONFIRM ownership. Do not use it to decide whether to leave a daemon
+ * alone - see {@link isForeignUid} for why.
  */
 export function isCurrentUid(uid: number | null): boolean {
   const mine = currentUid();
   return mine !== null && uid !== null && uid === mine;
+}
+
+/**
+ * True only when a uid is positively SOMEONE ELSE'S: both sides known and different.
+ *
+ * This, not `!isCurrentUid`, is the gate for refusing to adopt, lease or stop a
+ * daemon. The difference matters because unknown ownership is not evidence of
+ * foreign ownership, and Windows has no uid at all - so `!isCurrentUid` is true for
+ * every daemon there, including our own.
+ *
+ * Getting that wrong is not cosmetic. With `!isCurrentUid` as the gate, a Windows
+ * developer's second dev server probes the running daemon, sees `ours`, refuses to
+ * adopt it, finds the port occupied on every rung, and degrades to direct URLs
+ * permanently - the feature silently switches itself off for a whole platform. And
+ * it protects nothing there, because a platform with no uid has no uid to steal.
+ */
+export function isForeignUid(uid: number | null): boolean {
+  const mine = currentUid();
+  return mine !== null && uid !== null && uid !== mine;
 }
 
 function currentUid(): number | null {

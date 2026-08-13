@@ -29,7 +29,7 @@ import {
 } from './resolve-proxy-entry';
 import {
   createDaemonInfoStore,
-  isCurrentUid,
+  isForeignUid,
   type DaemonInfoStore,
 } from './state/daemon-info';
 import { isPidAlive } from './state/routes';
@@ -83,6 +83,14 @@ export interface EnsureProxyDeps {
   readonly spawnDaemon?: (port: number, env: NodeJS.ProcessEnv) => void;
   readonly isAlive?: (pid: number) => boolean;
   readonly delay?: (ms: number) => Promise<void>;
+  /**
+   * Whether a uid is positively someone else's.
+   *
+   * Injected so the ownership rule can be asserted on every platform. Left to the
+   * host, the assertion would depend on whether the CI runner has uids at all -
+   * which is exactly the difference that hid a Windows-only bug here.
+   */
+  readonly isForeignOwner?: (uid: number | null) => boolean;
 }
 
 // Generous enough for two node startups - the spawn goes through the detach hop -
@@ -111,6 +119,7 @@ export async function ensureProxy(
     probe = probeProxy,
     isAlive = isPidAlive,
     delay = defaultDelay,
+    isForeignOwner = isForeignUid,
   } = deps;
 
   if (!enabled || mode === 'direct') {
@@ -256,9 +265,11 @@ export async function ensureProxy(
       );
       return null;
     }
-    // Never adopt, lease or stop a daemon belonging to someone else. On a shared
-    // machine the predecessor would happily have shut down another developer's.
-    if (!isCurrentUid(status.uid)) {
+    // Never adopt a daemon belonging to someone else. Note this asks "is it
+    // POSITIVELY foreign", not "is it positively mine": unknown ownership is not
+    // evidence of foreign ownership, and on a platform with no uid the stricter
+    // question is false for our OWN daemon, which switches the feature off entirely.
+    if (isForeignOwner(status.uid)) {
       logger.info(
         `:${rung.port} belongs to another user's daemon; trying the next option`,
       );

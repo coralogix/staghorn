@@ -227,32 +227,48 @@ function staged({
     requireResolve: (specifier) =>
       specifier === DAEMON_SPECIFIER ? resolved : null,
     exists: (path) => {
-      onExists?.(path);
-      return present.has(path);
+      onExists?.(norm(path));
+      return present.has(norm(path));
     },
     readText: () => text,
     writeText: (path, contents) => {
-      written.push([path, contents]);
-      present.add(path);
+      written.push([norm(path), contents]);
+      present.add(norm(path));
     },
     mkdirp: (path) => {
-      if (unwritable.includes(path)) {
+      if (unwritable.includes(norm(path))) {
         throw Object.assign(new Error('EROFS'), { code: 'EROFS' });
       }
     },
     rename: (from, to) => {
-      present.delete(from);
-      present.add(to);
+      present.delete(norm(from));
+      present.add(norm(to));
     },
     relocateBases: () => ['/state/bin', '/tmp/staghorn-bin'],
     logger,
     version: '9.9.9',
   };
+
+  // The resolver builds paths with path.join, which yields backslashes on Windows,
+  // while these fixtures are readable POSIX strings. Normalising at the boundary
+  // keeps one set of fixtures correct on every platform - the alternative was a
+  // suite that only passed on the two platforms it was written on.
+  const real = createProxyEntryResolver(deps);
   return {
-    resolver: createProxyEntryResolver(deps),
+    resolver: {
+      resolve: (explicit) => {
+        const found = real.resolve(explicit);
+        return found === null ? null : norm(found);
+      },
+      reset: real.reset,
+    },
     logger,
     written,
   };
+}
+
+function norm(path: string): string {
+  return path.replaceAll('\\', '/');
 }
 
 // Referenced so the constant stays honest if the daemon filename ever changes.

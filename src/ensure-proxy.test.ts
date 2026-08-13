@@ -144,13 +144,33 @@ describe('ensureProxy safety checks', () => {
     const { result, logger } = await runWithLogger({
       onPort: {
         [DEFAULT_WILDCARD_PORT]: ours({ uid: 999_999 }),
-        [DEFAULT_SHARED_PORT]: ours({ port: DEFAULT_SHARED_PORT }),
+        [DEFAULT_SHARED_PORT]: ours({ port: DEFAULT_SHARED_PORT, uid: 1000 }),
       },
+      // Injected so this asserts the RULE rather than the host's uid support. Left
+      // to the platform, this passed on Linux and macOS while the very same code
+      // path silently disabled the tool on Windows.
+      isForeignOwner: (uid) => uid === 999_999,
     });
     expect(result.mode).toBe('sharedPort');
     expect(
       logger.records.some((record) => record.msg.includes('another user')),
     ).toBe(true);
+  });
+
+  // The Windows case, and the reason the gate asks "positively foreign" rather than
+  // "positively mine": a platform with no uid reports null on both sides, so the
+  // stricter question is false for our OWN daemon and every dev server would
+  // degrade to direct URLs permanently.
+  it('adopts a daemon whose ownership cannot be determined', async () => {
+    const result = await run(
+      {},
+      {
+        onPort: { [DEFAULT_WILDCARD_PORT]: ours({ uid: null }) },
+        isForeignOwner: () => false,
+      },
+    );
+    expect(result.mode).toBe('wildcard');
+    expect(result.started).toBe(false);
   });
 
   it('uses a legacy daemon but says it needs restarting', async () => {
@@ -225,6 +245,7 @@ interface Stage {
   alivePids?: readonly number[];
   probe?: EnsureProxyDeps['probe'];
   spawnDaemon?: EnsureProxyDeps['spawnDaemon'];
+  isForeignOwner?: EnsureProxyDeps['isForeignOwner'];
 }
 
 function deps(
@@ -244,6 +265,9 @@ function deps(
     logger: extra.logger ?? createRecordingLogger(),
     entryResolver: { resolve: () => entry, reset: () => {} },
     isAlive: (pid) => alivePids.includes(pid),
+    // Default to "nothing is foreign", so the fixtures do not depend on whether the
+    // host platform has uids at all.
+    isForeignOwner: stage.isForeignOwner ?? (() => false),
     // No real waiting: the ladder's timing is not what these tests are about.
     delay: () => Promise.resolve(),
     daemonInfo: {

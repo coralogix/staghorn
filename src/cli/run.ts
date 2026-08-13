@@ -21,8 +21,7 @@ import {
   PROTOCOL_VERSION,
   isProtocolCompatible,
 } from '../protocol';
-import { isCurrentUid } from '../state/daemon-info';
-import { createDaemonInfoStore } from '../state/daemon-info';
+import { createDaemonInfoStore, isForeignUid } from '../state/daemon-info';
 import { createFileRouteStore, type DevRoute } from '../state/routes';
 import { VERSION } from '../version';
 import { createPortScanner } from './discover-port';
@@ -297,7 +296,7 @@ async function status(io: Io, flags: Flags): Promise<number> {
         : [
             `warning   this daemon speaks protocol v${found.protocol}, this CLI speaks v${PROTOCOL_VERSION}`,
           ]),
-      ...(isCurrentUid(found.uid) ? [] : ['warning   owned by another user']),
+      ...(isForeignUid(found.uid) ? ['warning   owned by another user'] : []),
     ].join('\n') + '\n',
   );
   return 0;
@@ -309,9 +308,10 @@ async function stop(io: Io): Promise<number> {
     io.stdout.write('No staghorn daemon is running.\n');
     return 0;
   }
-  // Never stop someone else's daemon. On a shared machine the predecessor would
-  // happily have killed a colleague's dev environment.
-  if (!isCurrentUid(outcome.status.uid)) {
+  // Never stop someone else's daemon - but only when it POSITIVELY is someone
+  // else's. `!isCurrentUid` would refuse to stop our own daemon on any platform
+  // without uids, which is the one thing `stop` exists to do.
+  if (isForeignUid(outcome.status.uid)) {
     io.stderr.write(
       `staghorn: the daemon on :${outcome.status.port} belongs to another user; refusing to stop it.\n`,
     );
