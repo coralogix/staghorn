@@ -1,0 +1,105 @@
+{
+  "//name": "Internal phase: published to the private registry as @cx/*. Renamed to the bare public name at the OSS flip; nothing in src/ hardcodes it (see src/version.ts PACKAGE_NAME).",
+  "name": "@cx/staghorn",
+  "version": "0.0.0",
+  "description": "Every git branch gets its own localhost hostname instead of a port, via one shared unprivileged reverse proxy. Zero dependencies, no sudo, no /etc/hosts, no config.",
+  "keywords": [
+    "localhost",
+    "dev-server",
+    "reverse-proxy",
+    "git-worktree",
+    "subdomain",
+    "vite",
+    "developer-experience"
+  ],
+  "license": "Apache-2.0",
+  "author": "Coralogix Ltd.",
+  "homepage": "https://github.com/coralogix/staghorn#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coralogix/staghorn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/coralogix/staghorn/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "//exports": "Two notes, since comment keys are illegal INSIDE exports (they must start with './'). (1) ESM declarations are .d.ts, not .d.mts: tsup emits .d.ts for the ESM pass and .d.cts for the CJS pass, and since the package is type:module a .d.ts is read as ESM declarations, pairing with index.mjs. (2) './proxy' is a FILE LOCATOR, not an importable API - resolve-proxy-entry.ts calls require.resolve on it to find the daemon to spawn, and it is deliberately a bare string because a conditions object makes require.resolve throw ERR_PACKAGE_PATH_NOT_EXPORTED for CJS consumers. Both verified by publint + attw in CI.",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./config": {
+      "import": {
+        "types": "./dist/config.d.ts",
+        "default": "./dist/config.mjs"
+      },
+      "require": {
+        "types": "./dist/config.d.cts",
+        "default": "./dist/config.cjs"
+      }
+    },
+    "./testing": {
+      "import": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.mjs"
+      },
+      "require": {
+        "types": "./dist/testing.d.cts",
+        "default": "./dist/testing.cjs"
+      }
+    },
+    "./proxy": "./dist/proxy.mjs",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "staghorn": "./dist/cli.mjs",
+    "stag": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "//publishConfig": "Internal phase targets the private registry. At the OSS flip this becomes { access: public, provenance: true } against registry.npmjs.org.",
+  "publishConfig": {
+    "registry": "https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "//check:pkg": "profile node16 because node10 predates `exports`, so subpath resolution is inherently unavailable there (the main entry still works via types/main and IS checked). ./proxy is excluded because it is a file locator for the daemon spawn, not an importable API - it has no types on purpose.",
+    "check:pkg": "publint && attw --pack . --profile node16 --exclude-entrypoints proxy",
+    "check:scrub": "node scripts/scrub-check.mjs",
+    "changeset": "changeset",
+    "release": "changeset publish",
+    "prepublishOnly": "npm run build && npm run check:pkg && npm run check:scrub"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
+    "@types/node": "^22.15.3",
+    "publint": "^0.3.14",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {}
+}

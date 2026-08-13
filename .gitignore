@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.tgz
+coverage/
+.DS_Store
+*.log
+
+# Install-matrix fixtures get a real node_modules per package manager; never commit them.
+fixtures/**/node_modules/
+fixtures/**/.yarn/
+fixtures/**/.pnp.*
+fixtures/**/package-lock.json
+fixtures/**/pnpm-lock.yaml
+fixtures/**/yarn.lock
+fixtures/**/bun.lockb
