@@ -73,8 +73,12 @@ jobs:
         run: |
           size=$(npm pack --dry-run --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0].size))')
           echo "packed size: $size bytes"
-          if [ "$size" -gt 300000 ]; then
-            echo "::error::tarball is larger than 300 KB; check the files field"
+          # Generous on purpose. This guards against an accidental src/ or fixtures/
+          # inclusion - which is also how internal material would leak into a
+          # published artifact - not against byte growth. The current ~283 KB is
+          # mostly library sourcemaps, which are legitimate.
+          if [ "$size" -gt 600000 ]; then
+            echo "::error::tarball is larger than 600 KB; check the files field"
             exit 1
           fi
 
