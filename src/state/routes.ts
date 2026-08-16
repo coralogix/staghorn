@@ -7,15 +7,7 @@
 // touch each other's files. A lock would have been worse than the bug - any lock
 // this process could take is a lock a SIGKILL can leave behind forever.
 
-import {
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  statSync,
-  watch,
-  type FSWatcher,
-} from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -85,42 +77,37 @@ export interface RouteStoreOptions {
   readonly logger?: Logger;
   /** Coalescing window for `watch`. */
   readonly watchDebounceMs?: number;
-  /**
-   * How changes are noticed. 'auto' picks `poll` on Windows and `native` elsewhere -
-   * see {@link resolveWatchStrategy}.
-   */
+  /** 'poll' (default) or 'off'. See the note on {@link WatchStrategy}. */
   readonly watchStrategy?: WatchStrategy;
   readonly watchPollIntervalMs?: number;
 }
 
-export type WatchStrategy = 'auto' | 'native' | 'poll' | 'off';
+/**
+ * Changes are noticed by POLLING. `fs.watch` is deliberately not used at all.
+ *
+ * It was tried, on both of the obvious paths, and it fails differently on each
+ * platform:
+ *
+ *   - Windows: libuv's fs-event backend asserts and ABORTS THE PROCESS when the
+ *     filename it is handed does not share the watched directory's prefix
+ *     (`!_wcsnicmp(filename, dir, dirlen)`, src/win/fs-event.c). An 8.3 short path is
+ *     enough, and Windows temp directories routinely have one. It is not catchable.
+ *   - macOS: watching a directory reached through a symlink - which `os.tmpdir()`
+ *     is, `/var` -> `/private/var` - delivers events unreliably.
+ *
+ * A shared daemon must not be abortable by a filesystem event, and a change signal
+ * that works on one platform is not a change signal. Polling is one code path, has no
+ * platform branch, and is deterministic to test.
+ *
+ * The cost is bounded and small: at worst `watchPollIntervalMs` of extra latency
+ * before a new route is picked up. The watch was only ever an optimisation - the
+ * daemon re-reads its routing table on staleness anyway, and that TTL is the same
+ * order of magnitude - so nothing is actually lost.
+ */
+export type WatchStrategy = 'poll' | 'off';
 
 const DEFAULT_WATCH_DEBOUNCE_MS = 40;
 const DEFAULT_WATCH_POLL_INTERVAL_MS = 250;
-
-/**
- * `fs.watch` is not used on Windows.
- *
- * libuv's Windows fs-event backend asserts and ABORTS THE PROCESS when the filename
- * it is handed does not share the watched directory's prefix
- * (`!_wcsnicmp(filename, dir, dirlen)`, src/win/fs-event.c). An 8.3 short path in the
- * watched directory is enough to trigger it, and temp directories on Windows
- * routinely have one (`RUNNER~1`, `DOR~1.PEL`). It is not catchable: the process dies.
- *
- * A shared daemon that can be aborted by a filesystem event is not acceptable, and
- * the watch is only an optimisation - the daemon already re-reads its routing table
- * on staleness, which is the correctness path. So Windows polls the directory mtime
- * instead. Every write here is tmp-file + rename, so the directory mtime always moves.
- */
-export function resolveWatchStrategy(
-  strategy: WatchStrategy,
-  platform: NodeJS.Platform = process.platform,
-): Exclude<WatchStrategy, 'auto'> {
-  if (strategy !== 'auto') {
-    return strategy;
-  }
-  return platform === 'win32' ? 'poll' : 'native';
-}
 
 export function createFileRouteStore({
   dir = routesDir,
@@ -128,7 +115,7 @@ export function createFileRouteStore({
   now = Date.now,
   logger = silentLogger,
   watchDebounceMs = DEFAULT_WATCH_DEBOUNCE_MS,
-  watchStrategy = 'auto',
+  watchStrategy = 'poll',
   watchPollIntervalMs = DEFAULT_WATCH_POLL_INTERVAL_MS,
 }: RouteStoreOptions = {}): RouteStore {
   return {
@@ -224,8 +211,7 @@ export function createFileRouteStore({
     },
 
     watch: (onChange) => {
-      const strategy = resolveWatchStrategy(watchStrategy);
-      if (strategy === 'off') {
+      if (watchStrategy === 'off') {
         return () => {};
       }
       const directory = dir();
@@ -257,52 +243,40 @@ export function createFileRouteStore({
         }
       };
 
-      if (strategy === 'poll') {
-        let previous = directoryMtime(directory);
-        const poller = setInterval(() => {
-          const current = directoryMtime(directory);
-          if (current !== previous) {
-            previous = current;
-            fire();
-          }
-        }, watchPollIntervalMs);
-        poller.unref?.();
-        return () => {
-          clearInterval(poller);
-          clearDebounce();
-        };
-      }
-
-      let watcher: FSWatcher;
-      try {
-        watcher = watch(directory, { persistent: false }, fire);
-      } catch (err) {
-        logger.warn('could not watch state dir', { error: errorMessage(err) });
-        return () => {};
-      }
-      watcher.on('error', (err) => {
-        logger.warn('state dir watcher failed', { error: errorMessage(err) });
-      });
+      let previous = directoryFingerprint(directory);
+      const poller = setInterval(() => {
+        const current = directoryFingerprint(directory);
+        if (current !== previous) {
+          previous = current;
+          fire();
+        }
+      }, watchPollIntervalMs);
+      poller.unref?.();
       return () => {
+        clearInterval(poller);
         clearDebounce();
-        watcher.close();
       };
     },
   };
 }
 
 /**
- * Directory mtime, or -1 when it cannot be read.
+ * A fingerprint of the directory's route files, or '' when it cannot be read.
  *
- * Sufficient as a change signal because every write in this module is tmp-file +
- * rename: both operations alter the directory's entry list, so its mtime always
- * moves. Editing a route file in place would not be detected, and nothing does that.
+ * The entry LIST, not the directory mtime. Directory mtime is the obvious signal and
+ * it does not work: NTFS does not reliably bump a directory's last-write-time when a
+ * child is created, so on the very platform this polling path exists to serve, the
+ * poll would never fire. Listing the directory answers the question directly -
+ * "which routes exist" - instead of relying on a filesystem's metadata bookkeeping.
+ *
+ * Cheap enough to run on a timer: the directory holds one small file per running dev
+ * server, so this is a readdir over a handful of entries.
  */
-function directoryMtime(directory: string): number {
+function directoryFingerprint(directory: string): string {
   try {
-    return statSync(directory).mtimeMs;
+    return readdirSync(directory).filter(isRouteFile).sort().join(' ');
   } catch {
-    return -1;
+    return '';
   }
 }
 

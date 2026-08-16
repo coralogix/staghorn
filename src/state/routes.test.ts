@@ -8,7 +8,6 @@ import {
   ROUTE_SCHEMA_VERSION,
   createFileRouteStore,
   isPidAlive,
-  resolveWatchStrategy,
   type RouteInput,
   type RouteStore,
   type WatchStrategy,
@@ -199,31 +198,12 @@ describe('createFileRouteStore.prune', () => {
   });
 });
 
-describe('resolveWatchStrategy', () => {
-  // libuv's Windows fs-event backend asserts and ABORTS THE PROCESS when handed a
-  // filename that does not share the watched directory's prefix, and an 8.3 short
-  // path is enough to cause it. It killed two CI workers outright before this
-  // existed. A shared daemon must not be abortable by a filesystem event.
-  it('never uses the native watcher on Windows', () => {
-    expect(resolveWatchStrategy('auto', 'win32')).toBe('poll');
-  });
-
-  it('uses the native watcher elsewhere', () => {
-    expect(resolveWatchStrategy('auto', 'darwin')).toBe('native');
-    expect(resolveWatchStrategy('auto', 'linux')).toBe('native');
-  });
-
-  it('honours an explicit strategy on every platform', () => {
-    expect(resolveWatchStrategy('native', 'win32')).toBe('native');
-    expect(resolveWatchStrategy('off', 'linux')).toBe('off');
-  });
-});
-
-describe('createFileRouteStore.watch (polling)', () => {
-  // Forced rather than platform-dependent, so the strategy Windows actually uses is
-  // exercised on the machines most contributors work on.
-  it('notices a new route by directory mtime', async () => {
-    const { store } = harness({ watchStrategy: 'poll', watchPollIntervalMs: 20 });
+// Polling is the only strategy. fs.watch aborts the process on Windows and delivers
+// unreliably through macOS's symlinked temp dir, so it is not used at all - which is
+// also why these tests are deterministic rather than timing-tolerant.
+describe('createFileRouteStore.watch', () => {
+  it('notices a new route', async () => {
+    const { store } = harness({ watchPollIntervalMs: 20 });
     let calls = 0;
     const stop = store.watch(() => {
       calls++;
@@ -236,8 +216,45 @@ describe('createFileRouteStore.watch (polling)', () => {
     }
   });
 
-  it('stops polling after unsubscribe', async () => {
-    const { store } = harness({ watchStrategy: 'poll', watchPollIntervalMs: 20 });
+  it('notices a removed route', async () => {
+    const { store } = harness({ watchPollIntervalMs: 20 });
+    await store.upsert(route({ routeKey: 'doomed.myapp' }));
+    let calls = 0;
+    const stop = store.watch(() => {
+      calls++;
+    });
+    try {
+      await store.remove('doomed.myapp');
+      await waitFor(() => calls >= 1);
+    } finally {
+      stop();
+    }
+  });
+
+  it('coalesces a burst of changes into one notification', async () => {
+    const { store } = harness({ watchPollIntervalMs: 20, watchDebounceMs: 60 });
+    let calls = 0;
+    const stop = store.watch(() => {
+      calls++;
+    });
+    try {
+      await Promise.all(
+        Array.from({ length: 5 }, (_, i) =>
+          store.upsert(route({ routeKey: `b-${i}.myapp` })),
+        ),
+      );
+      await waitFor(() => calls >= 1);
+      await settle(120);
+      // Five writes are ten filesystem operations; coalescing is what stops the
+      // daemon rebuilding its routing table ten times for one logical change.
+      expect(calls).toBeLessThan(5);
+    } finally {
+      stop();
+    }
+  });
+
+  it('stops notifying after unsubscribe', async () => {
+    const { store } = harness({ watchPollIntervalMs: 20 });
     let calls = 0;
     store.watch(() => {
       calls++;
@@ -248,57 +265,14 @@ describe('createFileRouteStore.watch (polling)', () => {
   });
 
   it('is inert when watching is off', async () => {
-    const { store } = harness({ watchStrategy: 'off' });
+    const { store } = harness({ watchStrategy: 'off', watchPollIntervalMs: 20 });
     let calls = 0;
     const stop = store.watch(() => {
       calls++;
     });
     await store.upsert(route({ routeKey: 'quiet.myapp' }));
-    await settle(80);
+    await settle(120);
     stop();
-    expect(calls).toBe(0);
-  });
-});
-
-// Native watching only. On Windows this strategy is never selected, and forcing it
-// there would re-introduce the libuv abort.
-describe.skipIf(process.platform === 'win32')('createFileRouteStore.watch', () => {
-  // The watch is an optimisation over the daemon's staleness refresh, not the only
-  // path - which is why the generous budget here is acceptable rather than a
-  // papered-over flake. macOS backs directory watches with FSEvents, whose arming
-  // latency is tens to hundreds of milliseconds and is not something this package
-  // controls.
-  it('coalesces a burst of changes into one notification', async () => {
-    const { store } = harness({ watchDebounceMs: 20 });
-    let calls = 0;
-    const stop = store.watch(() => {
-      calls++;
-    });
-    try {
-      await settle(150); // let the platform watcher arm before writing
-      await Promise.all(
-        Array.from({ length: 5 }, (_, i) =>
-          store.upsert(route({ routeKey: `b-${i}.myapp` })),
-        ),
-      );
-      await waitFor(() => calls >= 1);
-      // Five writes are ten filesystem events (write + rename each); coalescing is
-      // what stops the daemon rebuilding its table ten times for one change.
-      expect(calls).toBeLessThan(5);
-    } finally {
-      stop();
-    }
-  });
-
-  it('stops notifying after unsubscribe', async () => {
-    const { store } = harness({ watchDebounceMs: 10 });
-    let calls = 0;
-    const stop = store.watch(() => {
-      calls++;
-    });
-    stop();
-    await store.upsert(route({ routeKey: 'main.myapp' }));
-    await settle(60);
     expect(calls).toBe(0);
   });
 });

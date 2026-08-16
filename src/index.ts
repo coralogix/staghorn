@@ -96,7 +96,6 @@ export {
   ROUTE_SCHEMA_VERSION,
   createFileRouteStore,
   isPidAlive,
-  resolveWatchStrategy,
   type DevRoute,
   type PruneResult,
   type RouteSnapshot,
