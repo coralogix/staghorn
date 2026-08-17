@@ -324,9 +324,26 @@ function launch(entry: string, port: number, env: NodeJS.ProcessEnv): void {
   child.unref();
 }
 
+/**
+ * The wait between spawn-poll attempts. Deliberately REF'D.
+ *
+ * This timer must not be unreffed. It is a wait the caller is awaiting, and while it
+ * is pending it can easily be the only thing holding the event loop open - which is
+ * exactly the state of a dev-serve script that has not started its dev server yet.
+ * An unreffed timer there lets Node decide the program is finished and exit with
+ * code 0, silently, in the middle of the poll, killing the host process.
+ *
+ * That is the worst failure this package can have: the contract is that it never
+ * breaks the caller's dev server, and the unreffed version broke it with no message
+ * at all. Found by integrating for real; unit tests inject their own delay and so
+ * cannot see it. See the subprocess regression test in ensure-proxy.keepalive.test.ts.
+ *
+ * Timers that ARE correctly unreffed elsewhere - the lease linger, the route poller,
+ * the lease socket - differ in kind: they are background bookkeeping nobody awaits,
+ * and they must never be the reason a process stays alive.
+ */
 function defaultDelay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    const handle = setTimeout(resolve, ms);
-    handle.unref?.();
+    setTimeout(resolve, ms);
   });
 }

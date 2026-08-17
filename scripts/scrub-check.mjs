@@ -45,7 +45,31 @@ const SCANNED_EXTENSIONS = new Set([
  * Each rule explains itself, because a failure a developer cannot interpret gets
  * worked around rather than fixed.
  */
+// Control characters that must never appear in a source file. Tab, newline and
+// carriage return are excluded; everything else in C0 plus DEL is a mistake.
+//
+// Built from char codes rather than written as an escape class on purpose: this rule
+// exists because control bytes reached source files TWICE - an ESC/BEL pair in the
+// terminal-link helper and a NUL used as a join separator, which made that whole file
+// read as binary to grep and diff. Both arrived by writing an escape sequence that
+// something along the way turned into the byte it denotes. Char codes cannot be
+// mangled that way.
+const FORBIDDEN_CONTROL_CODES = new Set([
+  ...Array.from({ length: 32 }, (_, code) => code).filter(
+    (code) => code !== 9 && code !== 10 && code !== 13,
+  ),
+  127,
+]);
+
 const RULES = [
+  {
+    name: 'control-character',
+    test: (line) =>
+      Array.from(line).some((char) =>
+        FORBIDDEN_CONTROL_CODES.has(char.charCodeAt(0)),
+      ),
+    why: 'A control character in source. It makes the file read as binary to grep and diff, and it almost always arrived by accident. Build the character from String.fromCharCode() and give it a name instead.',
+  },
   {
     name: 'uuid',
     pattern: /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
@@ -111,7 +135,11 @@ for (const file of walk(ROOT)) {
   const rel = relative(ROOT, file);
   lines.forEach((line, index) => {
     for (const rule of RULES) {
-      if (!rule.pattern.test(line)) {
+      // A rule matches either by regex or by predicate - the control-character rule
+      // needs the latter, because expressing it as a regex would mean writing the very
+      // escape sequences that caused the problem.
+      const matched = rule.test ? rule.test(line) : rule.pattern.test(line);
+      if (!matched) {
         continue;
       }
       if (isAllowed(rel, line)) {
