@@ -274,7 +274,12 @@ export function createFileRouteStore({
  */
 function directoryFingerprint(directory: string): string {
   try {
-    return readdirSync(directory).filter(isRouteFile).sort().join(' ');
+    // JSON rather than a joined string. A separator has to be a character that can
+    // never appear in a filename, and choosing one invites exactly the mistake this
+    // line already made once - it shipped with a literal NUL byte as the separator,
+    // which made the whole source file read as binary to grep and diff.
+    // JSON.stringify is unambiguous by construction and is printable ASCII only.
+    return JSON.stringify(readdirSync(directory).filter(isRouteFile).sort());
   } catch {
     return '';
   }
