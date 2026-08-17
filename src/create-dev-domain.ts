@@ -32,6 +32,15 @@ export interface CreateDevDomainOptions extends ConfigInput {
   readonly service?: string;
   /** Skip the banner; the caller prints its own. */
   readonly quiet?: boolean;
+  /**
+   * Resolve everything, touch nothing: no daemon is started, no route is registered,
+   * no lease is taken and no exit handler is installed.
+   *
+   * For commands that ANSWER a question rather than claim a domain - `staghorn url`
+   * being the obvious one. A query that leaves a daemon and a route behind is a query
+   * with side effects, which is a bug however tidy the cleanup is.
+   */
+  readonly readOnly?: boolean;
 }
 
 export interface DevDomain {
@@ -141,7 +150,13 @@ export async function createDevDomain(
   options: CreateDevDomainOptions = {},
   deps: DevDomainDeps = {},
 ): Promise<DevDomain> {
-  const { cwd = process.cwd(), service, quiet = false, ...configInput } = options;
+  const {
+    cwd = process.cwd(),
+    service,
+    quiet = false,
+    readOnly = false,
+    ...configInput
+  } = options;
   const { config } = await loadConfig({ cwd, programmatic: configInput });
   const logger =
     deps.logger ??
@@ -193,6 +208,11 @@ export async function createDevDomain(
         ? {}
         : { sharedPort: config.proxy.sharedPort }),
       ...(config.daemon?.entry ? { proxyEntry: config.daemon.entry } : {}),
+      // A read-only query must not start anything, and `daemon.mode: 'external'`
+      // means the daemon's lifecycle belongs to something else (docker compose).
+      // 'external' was documented in the config types from the start and silently
+      // did nothing until now.
+      ...(readOnly || config.daemon?.mode === 'external' ? { spawn: false } : {}),
     },
     { logger },
   );
@@ -239,8 +259,9 @@ export async function createDevDomain(
   };
 
   // Only register and lease when a proxy will actually route. In direct mode there
-  // is nothing to route to and nothing to keep alive.
-  if (proxy.mode !== 'direct') {
+  // is nothing to route to and nothing to keep alive; in read-only mode we are
+  // answering a question, not claiming a domain.
+  if (!readOnly && proxy.mode !== 'direct') {
     await register();
     if (proxy.proxyPort !== null || proxy.mode === 'wildcard') {
       const leasePort = proxy.proxyPort ?? proxy.status?.port ?? null;
@@ -281,22 +302,33 @@ export async function createDevDomain(
       // Exit-time best effort; the daemon prunes dead routes anyway.
     }
   };
-  process.once('exit', cleanupSync);
-  process.once('SIGINT', () => {
-    cleanupSync();
-    process.exit(130);
-  });
-  process.once('SIGTERM', () => {
-    cleanupSync();
-    process.exit(143);
-  });
+  // Not in read-only mode: there is nothing to clean up, and installing a SIGINT
+  // handler that calls process.exit would change how the HOST process responds to
+  // Ctrl-C purely because it asked a question.
+  if (!readOnly) {
+    process.once('exit', cleanupSync);
+    process.once('SIGINT', () => {
+      cleanupSync();
+      process.exit(130);
+    });
+    process.once('SIGTERM', () => {
+      cleanupSync();
+      process.exit(143);
+    });
+  }
 
   const urlsFor = (urlContext: UrlContext): readonly LabelledUrl[] => {
     if (config.url?.buildUrls) {
       return config.url.buildUrls(urlContext);
     }
+    // A serve wants a URL that WORKS right now, so with no proxy it falls back to the
+    // dev server's own address. A read-only query is asking a different question -
+    // "what is this checkout's dev URL" - and answering `http://localhost:4657`
+    // because nothing happens to be running is technically true and useless.
     const base =
-      proxy.mode === 'direct' ? urlContext.directOrigin : urlContext.origin;
+      proxy.mode === 'direct' && !readOnly
+        ? urlContext.directOrigin
+        : urlContext.origin;
     const path = config.url?.entryPath ?? '/';
     const query = renderQuery(config.url?.query);
     return [{ label: 'url', url: `${base}${path === '/' ? '' : path}${query}` }];

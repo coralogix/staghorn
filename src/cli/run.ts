@@ -242,9 +242,12 @@ async function list(io: Io, flags: Flags): Promise<number> {
 
 async function url(io: Io, flags: Flags): Promise<number> {
   const service = flags.value.get('service');
+  // A query, not a claim: readOnly starts no daemon, registers no route, takes no
+  // lease and installs no exit handler.
   const domain = await createDevDomain({
     cwd: io.cwd,
     quiet: true,
+    readOnly: true,
     ...(service ? { service } : {}),
   });
   try {
@@ -270,7 +273,8 @@ async function url(io: Io, flags: Flags): Promise<number> {
     }
     return 0;
   } finally {
-    // `url` is a query, not a claim: it must not leave a route behind.
+    // Nothing was claimed, so this only clears the memoised state. Kept so the
+    // contract holds if readOnly ever gains something worth releasing.
     await domain.release();
   }
 }
