@@ -1,5 +1,20 @@
 # @cx/staghorn
 
+## 0.1.2
+
+### Patch Changes
+
+- [#8](https://github.com/coralogix/internal-staghorn/pull/8) [`6d7c630`](https://github.com/coralogix/internal-staghorn/commit/6d7c63042e925db71583a2bcc30b4946dc4c1585) Thanks [@Knat-Dev](https://github.com/Knat-Dev)! - Expose the resolved identity labels on `DevDomain`, and fix the CLI banner.
+
+  The banner showed the raw `package.json` name as the project - ignoring a configured
+  `identity.project` - and the whole route key where the branch belonged. So a consumer
+  who set `project: 'cx'` saw `project coralogix`, contradicting their own config.
+
+  The underlying gap was that `DevDomain` never exposed its resolved labels, so any
+  caller wanting to display them had to re-derive them, and both obvious guesses are
+  wrong. `domain.labels` now carries `{ branch, project, service }` after slugging and
+  any collision suffixing.
+
 ## 0.1.1
 
 ### Patch Changes
