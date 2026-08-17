@@ -26,16 +26,36 @@ jobs:
           cache: npm
 
       - name: Authenticate to the internal registry
-        # Internal phase only. At the open-source flip this whole step is deleted and
-        # replaced by npm Trusted Publishing (OIDC), which needs no token at all -
-        # publishConfig moves to registry.npmjs.org with provenance: true.
+        # Basic auth from the ORG-LEVEL secrets, which already reach this repo - no
+        # per-repo secret to request. `JFROG_USER` + `JFROG_PASSWORD` is the method
+        # confirmed working for JFrog npm publishes elsewhere in the org;
+        # `ARTIFACTORY_USERNAME` was removed org-wide and no longer works.
+        #
+        # At the open-source flip this whole step is deleted and replaced by npm
+        # Trusted Publishing (OIDC), which needs no credential at all - the same
+        # mechanism coralogix-browser-sdk already publishes @coralogix/browser with.
         run: |
-          cat >> "$HOME/.npmrc" <<'NPMRC'
+          auth=$(printf '%s:%s' "$JFROG_USER" "$JFROG_PASSWORD" | base64 | tr -d '\n')
+          umask 077
+          cat >> "$HOME/.npmrc" <<NPMRC
           @cx:registry=https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/
-          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:_authToken=${NPM_TOKEN}
+          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:_auth=${auth}
+          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:always-auth=true
           NPMRC
         env:
-          NPM_TOKEN: ${{ secrets.JFROG_NPM_TOKEN }}
+          JFROG_USER: ${{ secrets.JFROG_USER }}
+          JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+
+      - name: Verify the credential can actually reach the registry
+        # `npm publish --dry-run` never contacts the registry, so it cannot tell us
+        # whether the credential works. `whoami` does. It is the difference between
+        # "the tarball looks right" and "we are allowed to upload it", and the second
+        # is the only open question - reading that registry is already anonymous, so
+        # only DEPLOY permission is in doubt.
+        continue-on-error: true
+        run: |
+          npm whoami --registry=https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/ \
+            || echo "::warning::the JFrog credential did not authenticate; publish will likely fail with E401/E403"
 
       - run: npm ci
       - run: npm run typecheck
@@ -54,4 +74,3 @@ jobs:
           title: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.JFROG_NPM_TOKEN }}
