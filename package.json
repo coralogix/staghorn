@@ -1,7 +1,7 @@
 {
   "//name": "Internal phase: published to the private registry as @cx/*. Renamed to the bare public name at the OSS flip; nothing in src/ hardcodes it (see src/version.ts PACKAGE_NAME).",
   "name": "@cx/staghorn",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Every git branch gets its own localhost hostname instead of a port, via one shared unprivileged reverse proxy. Zero dependencies, no sudo, no /etc/hosts, no config.",
   "keywords": [
     "localhost",
