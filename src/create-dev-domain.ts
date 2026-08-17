@@ -50,6 +50,20 @@ export interface DevDomain {
   readonly reason: FallbackReason;
   readonly urls: readonly LabelledUrl[];
   readonly identity: RepoContext;
+  /**
+   * The resolved labels that make up the route key, after slugging and any
+   * collision suffixing.
+   *
+   * Exposed because a caller that wants to DISPLAY them otherwise has to re-derive
+   * them, and the obvious guesses are both wrong: `identity.packageName` is the raw
+   * package name rather than the configured project label, and `routeKey` is all
+   * three labels joined. The CLI banner got both wrong before this existed.
+   */
+  readonly labels: {
+    readonly branch: string;
+    readonly project: string | null;
+    readonly service: string | null;
+  };
   /** Environment to pass to a child dev server. */
   readonly env: Readonly<Record<string, string>>;
   /**
@@ -312,6 +326,11 @@ export async function createDevDomain(
       return urlsFor(buildUrlContext());
     },
     identity: context,
+    labels: {
+      branch: claimed.parts.branch,
+      project: claimed.parts.project ?? null,
+      service: claimed.parts.service ?? null,
+    },
     get env() {
       return childEnv(buildUrlContext(), config);
     },

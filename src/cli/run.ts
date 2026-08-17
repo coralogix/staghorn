@@ -187,9 +187,11 @@ function printBanner(io: Io, domain: DevDomain): void {
 
 function renderBannerFor(io: Io, domain: DevDomain): string {
   return renderBanner({
-    project: domain.identity.packageName ?? null,
-    branch: domain.routeKey,
-    service: null,
+    // The resolved labels, not `identity.packageName` (the raw package name, which
+    // ignores a configured project label) and not `routeKey` (all three joined).
+    project: domain.labels.project,
+    branch: domain.labels.branch,
+    service: domain.labels.service,
     urls: domain.urls,
     directOrigin: domain.directOrigin,
     isTty: io.isTty ?? false,
