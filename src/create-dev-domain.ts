@@ -21,7 +21,7 @@ import { pickPort } from './ports/probe';
 import { PORT_MAX, PORT_MIN } from './ports/hash';
 import { ensureProxy, type FallbackReason, type ProxyMode } from './ensure-proxy';
 import { holdLease, type ProxyLease } from './control-client';
-import { createFileRouteStore, type RouteStore } from './state/routes';
+import { createFileRouteStore, type RouteSnapshot, type RouteStore } from './state/routes';
 import { renderBanner } from './banner';
 import { loadConfig, type ConfigInput } from './config/load';
 import type { LabelledUrl, StaghornConfig, UrlContext } from './config/types';
@@ -197,7 +197,7 @@ export async function createDevDomain(
     { logger },
   );
 
-  const port = await resolvePort(config, routeKey, snapshot.routes.size);
+  const port = await resolvePort(config, routeKey, snapshot, context.worktreePath ?? cwd);
   let currentPort = port;
   let currentLease: ProxyLease | null = null;
 
@@ -431,21 +431,42 @@ function identityOverrides(
 async function resolvePort(
   config: StaghornConfig,
   routeKey: string,
-  claimedCount: number,
+  snapshot: RouteSnapshot,
+  checkoutPath: string,
 ): Promise<number> {
   const ports = config.ports ?? {};
   if (ports.strategy === 'fixed' && ports.fixed) {
     return ports.fixed;
   }
   const [min = PORT_MIN, max = PORT_MAX] = ports.range ?? [];
+  // A re-serve of this checkout reclaims its previous port (still probed - a
+  // foreign server may have taken it meanwhile), so restarts keep a stable port
+  // under either order. The ownership guard matters when `disambiguate: false`
+  // lets a foreign checkout hold this key.
+  const own = snapshot.get(routeKey);
+  const previous =
+    own && own.checkoutPath === checkoutPath && own.port >= min && own.port <= max
+      ? own.port
+      : undefined;
+  const first = previous ?? (ports.order === 'sequential' ? min : undefined);
+  // Ports other routes registered count as taken even before their server binds
+  // (registered but still booting), so the walk skips them up front instead of
+  // racing them at the probe.
+  const claimed = new Set(
+    [...snapshot.routes.entries()]
+      .filter(([key]) => key !== routeKey)
+      .map(([, route]) => route.port),
+  );
   const picked = await pickPort(routeKey, {
     min,
     max,
+    claimed,
+    ...(first === undefined ? {} : { preferred: first }),
     ...(ports.probeHosts ? { hosts: ports.probeHosts } : {}),
   });
   // An exhausted range is not an error: the caller can let its dev server choose
   // and correct the registry afterwards via setPort.
-  return picked ?? min + (claimedCount % (max - min + 1));
+  return picked ?? min + (snapshot.size % (max - min + 1));
 }
 
 type UrlQuery = NonNullable<NonNullable<StaghornConfig['url']>['query']>;
