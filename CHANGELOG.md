@@ -1,5 +1,11 @@
 # @cx/staghorn
 
+## 0.2.0
+
+### Minor Changes
+
+- [#11](https://github.com/coralogix/internal-staghorn/pull/11) [`f30a96e`](https://github.com/coralogix/internal-staghorn/commit/f30a96e4b91eab750cf60ef78153ebb0c2447f78) Thanks [@Knat-Dev](https://github.com/Knat-Dev)! - Add `ports.order: 'sequential'` - allocate ports from the bottom of the range instead of a route-key hash, so the first serve on a machine gets exactly `range[0]` (for ecosystems where an SSO bookmark or proxy allowlist pins that port). Allocation now also reclaims the port a checkout already holds in the registry, so restarts keep their port, and skips ports other routes have registered even before their server binds.
+
 ## 0.1.2
 
 ### Patch Changes
