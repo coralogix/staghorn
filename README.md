@@ -182,6 +182,20 @@ domain.printBanner();
 await domain.setPort(actualPort);
 ```
 
+Allocation picks a stable hash of the route key by default, so each checkout
+tends to keep its own port. When something external pins a specific port - an
+SSO bookmark, a proxy allowlist - allocate sequentially instead, so the first
+serve on a machine gets exactly the bottom of the range:
+
+```ts
+const domain = await createDevDomain({
+  ports: { strategy: 'allocate', order: 'sequential', range: [4200, 4999] },
+});
+```
+
+Either way a checkout reclaims the port it already holds in the registry, so
+restarts keep their port.
+
 `resolveDevDomain()` answers what *would* happen with no side effects at all - no
 registry write, no spawn, no lease - for a script that wants to decide first.
 

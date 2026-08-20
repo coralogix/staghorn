@@ -164,6 +164,16 @@ export interface PortConfig {
   readonly strategy?: PortStrategy;
   readonly fixed?: number;
   readonly range?: readonly [number, number];
+  /**
+   * First candidate when allocating. 'hash' (default): a stable hash of the
+   * route key, so each checkout tends to keep its own port with zero state.
+   * 'sequential': the bottom of the range, so the first serve on a machine gets
+   * exactly `range[0]` - for ecosystems where something external pins that port
+   * (an SSO bookmark, a proxy allowlist) and must keep matching the first
+   * server. Either way a port this checkout already holds in the registry is
+   * reclaimed first, so restarts keep their port.
+   */
+  readonly order?: 'hash' | 'sequential';
   readonly discovery?: {
     /** Scrape the child's output for its port. false disables. */
     readonly fromStdout?: RegExp | false;
