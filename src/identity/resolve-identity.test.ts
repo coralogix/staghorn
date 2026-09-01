@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, expect, it } from 'vitest';
 
 import { MAX_HOSTNAME_LENGTH } from '../host';
@@ -71,9 +73,9 @@ describe('resolveIdentity project', () => {
 
   it('falls back to the origin remote repo name', () => {
     const { project, projectSource } = resolveIdentity(
-      context({ packageName: null, remoteName: 'cx-web-workspace' }),
+      context({ packageName: null, remoteName: 'acme-web-workspace' }),
     );
-    expect(project).toBe('cx-web-workspace');
+    expect(project).toBe('acme-web-workspace');
     expect(projectSource).toBe('remote');
   });
 
