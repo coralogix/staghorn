@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Finding our own daemon file, across every way this package can be installed.
 //
 // This is the highest-risk mechanical detail in the package. The version this grew

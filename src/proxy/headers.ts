@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Header handling for the forwarding paths. Pure - takes rawHeaders in, gives
 // headers out.
 

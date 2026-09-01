@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Rendering the URLs a developer actually reads.
 
 import type { LabelledUrl } from './config/types';

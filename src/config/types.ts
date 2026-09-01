@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The configuration surface.
 //
 // Two rules shaped this. First, the common case needs NO configuration at all -

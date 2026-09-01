@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Ties the shared daemon's lifetime to the dev servers it exists to serve.
 //
 // Every dev server holds one open "lease" connection for as long as it runs. The

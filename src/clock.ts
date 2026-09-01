@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Time is an injected dependency. The lease policy (linger, boot grace) is the
 // one place where the tool's correctness is a function of elapsed time, and
 // asserting on it must not mean sleeping in a test.

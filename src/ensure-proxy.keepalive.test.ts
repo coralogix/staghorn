@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Regression test for a bug that unit tests structurally cannot catch.
 //
 // `ensureProxy` waits between spawn-poll attempts. That wait used an UNREFFED timer,

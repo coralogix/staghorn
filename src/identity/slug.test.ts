@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, expect, it } from 'vitest';
 
 import { MAX_HOSTNAME_LENGTH, MAX_LABEL_LENGTH } from '../host';

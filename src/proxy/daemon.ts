@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The daemon entry point, and the detach hop.
 //
 // Deliberately thin: it reads its configuration out of the environment, calls

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Config discovery, layering, and provenance.
 //
 // Layers, low to high:

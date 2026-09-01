@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+//
 // Proves the packed tarball actually works when INSTALLED, per package manager.
 //
 // Unit tests cover the daemon-path resolver with staged fixtures, which is necessary

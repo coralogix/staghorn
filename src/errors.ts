@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * ENOENT is the only error this package routinely swallows: it means a file
  * vanished between listing and reading, which happens constantly when several

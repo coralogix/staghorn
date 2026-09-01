@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Finding a port a dev server can actually bind.
 //
 // Only needed by the `allocate` strategy. The default strategy is `discover` - let

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Learning a dev server's real port from its output.
 //
 // This is what makes the primary invocation need no configuration:

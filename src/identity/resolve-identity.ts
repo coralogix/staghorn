@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Turning a RepoContext into the two labels that make a host: branch and project.
 //
 // Every step has a fallback, and the last one always succeeds. A consumer who is
