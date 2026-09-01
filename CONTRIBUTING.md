@@ -84,3 +84,13 @@ ladders down instead.
 
 Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`). Signed commits
 are required by repository rules. Keep one concern per commit.
+
+## Contribution License Agreement
+
+Before your first pull request can be merged you will be asked to sign the
+[Contribution License Agreement](./CLA.md). CLA Assistant comments on the PR with a
+one-click signature link; it is a one-time step per contributor.
+
+## Security
+
+Do not open a public issue for a suspected vulnerability. See [SECURITY.md](./SECURITY.md).
