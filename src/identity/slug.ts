@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Turning human names (branches, project names) into legal DNS labels, and
 // resolving the rare collision. Pure - no IO, no state.
 

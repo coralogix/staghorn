@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_PORT_PATTERN, createPortScanner } from './discover-port';

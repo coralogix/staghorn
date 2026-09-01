@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+//
 // The gate that has to be green before this repository can be made public.
 //
 // It runs from day one, on every CI run, rather than being saved for the

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The CLI, as a function.
 //
 // `run(io)` takes its argv, env, cwd and streams as arguments and returns an exit

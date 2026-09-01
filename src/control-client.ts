@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The client half of the daemon's control protocol: probe, lease, shut down.
 //
 // Every call here targets an explicit port. Nothing in this package assumes :80 -

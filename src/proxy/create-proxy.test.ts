@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Integration test for the daemon over REAL sockets, on an ephemeral port.
 //
 // This is the coverage the predecessor had none of. It is possible here for one

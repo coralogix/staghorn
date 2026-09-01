@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The daemon, as a factory.
 //
 // One instance per machine serves a single port and routes each request to the

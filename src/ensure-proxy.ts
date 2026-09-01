@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Making sure a usable daemon exists, by walking the fallback ladder.
 //
 //   rung 1  wildcard :80          portless. macOS, most Windows, Linux w/ sysctl.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The wire contract between the daemon and every client (the CLI, the serve
 // seam, the lease holder, the tests). No IO - constants, shapes and guards only.
 

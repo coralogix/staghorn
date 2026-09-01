@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The route registry: which dev server owns which host, and on what port.
 //
 // One file per route, not one shared registry.json. The single-file design had a

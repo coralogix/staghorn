@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Working out what this checkout IS: which project, which branch, whether it is a
 // linked worktree, and whether it is a git repo at all.
 //

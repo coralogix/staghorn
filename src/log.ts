@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Logging is an injected dependency everywhere, never a direct console call.
 // The daemon writes to a file, the CLI writes to a TTY, tests capture, and an IDE
 // integration wants structured records - all four are the same code path.

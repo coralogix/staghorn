@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Deterministic port selection. Pure - no IO, no state.
 
 /** Inclusive bounds of the range dev servers are assigned from by default. */

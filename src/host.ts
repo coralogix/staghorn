@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The host shape, and the routing that reverses it. Pure - no IO, no state.
 //
 //   [<prefix>.]{<service>.}<branch>.<project>.<tld>

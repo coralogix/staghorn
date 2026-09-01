@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The package version, injected at build time by tsup's `define`.
 //
 // Compile-time rather than a runtime read of package.json, because the daemon is a

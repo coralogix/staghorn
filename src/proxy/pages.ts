@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // The pages a developer actually sees when routing fails. Pure.
 
 /**

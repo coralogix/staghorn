@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+//
 // Where the running daemon advertises the address it actually bound.
 //
 // No client may assume :80. The daemon walks a fallback ladder, so its port is a
