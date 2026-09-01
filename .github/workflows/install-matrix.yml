@@ -87,6 +87,11 @@ jobs:
         working-directory: fixture
         run: |
           TARBALL="$(cd .. && pwd)/tarball/staghorn.tgz"
+          # Yarn only: a RELATIVE path. On Windows git-bash the absolute form starts
+          # with a drive letter (`D:/a/...`), and Yarn's descriptor parser reads
+          # anything that does not start with `/` as `package-name@range` rather than
+          # a path. A `../` path has no drive letter to misread on any platform.
+          TARBALL_REL="../tarball/staghorn.tgz"
           case "${{ matrix.pm }}" in
             npm)          npm install --no-audit --no-fund -D "$TARBALL" ;;
             pnpm)         corepack enable && corepack prepare pnpm@latest --activate
@@ -102,13 +107,13 @@ jobs:
             yarn-nm)      touch yarn.lock
                           corepack enable && yarn set version stable
                           yarn config set nodeLinker node-modules
-                          yarn add -D "$TARBALL" ;;
+                          yarn add -D "$TARBALL_REL" ;;
             yarn-pnp)     touch yarn.lock
                           corepack enable && yarn set version stable
                           # PnP with zip-compressed deps: the case that motivates this job.
                           yarn config set nodeLinker pnp
                           yarn config set compressionLevel mixed
-                          yarn add -D "$TARBALL" ;;
+                          yarn add -D "$TARBALL_REL" ;;
             bun)          bun add -d "$TARBALL" ;;
           esac
 
