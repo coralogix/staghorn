@@ -94,10 +94,17 @@ jobs:
             pnpm-hoisted) corepack enable && corepack prepare pnpm@latest --activate
                           echo 'node-linker=hoisted' > .npmrc
                           pnpm add -D "$TARBALL" ;;
-            yarn-nm)      corepack enable && yarn set version stable
+            # The empty lockfile marks the fixture as its own Yarn project, and has to be
+            # there BEFORE the first yarn command. Yarn is the only package manager here
+            # that finds a project root by walking UP: without the marker it adopts the
+            # checkout above, writes `packageManager` and `.yarnrc.yml` into it, and then
+            # refuses the fixture as not part of that project.
+            yarn-nm)      touch yarn.lock
+                          corepack enable && yarn set version stable
                           yarn config set nodeLinker node-modules
                           yarn add -D "$TARBALL" ;;
-            yarn-pnp)     corepack enable && yarn set version stable
+            yarn-pnp)     touch yarn.lock
+                          corepack enable && yarn set version stable
                           # PnP with zip-compressed deps: the case that motivates this job.
                           yarn config set nodeLinker pnp
                           yarn config set compressionLevel mixed
