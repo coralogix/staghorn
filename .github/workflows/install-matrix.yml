@@ -34,6 +34,7 @@ jobs:
         # consumer would get. Packing per-leg would let a platform difference in the
         # tarball hide behind a platform difference in the install.
         run: |
+          mkdir -p dist-pack
           npm pack --pack-destination dist-pack
           mv dist-pack/*.tgz dist-pack/staghorn.tgz
       - uses: actions/upload-artifact@v4
