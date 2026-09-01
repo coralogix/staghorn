@@ -45,6 +45,7 @@ export type FallbackReason =
   | 'bind-denied'
   | 'spawn-failed'
   | 'no-daemon-entry'
+  | 'not-spawned'
   | 'protocol-mismatch'
   | 'other-user';
 
@@ -67,6 +68,15 @@ export interface EnsureProxyOptions {
   readonly mode?: 'auto' | ProxyMode;
   readonly wildcardPort?: number;
   readonly sharedPort?: number;
+  /**
+   * Whether a daemon may be STARTED. Default true.
+   *
+   * `false` adopts one that is already running and otherwise falls to `direct`,
+   * spawning nothing. Two callers need it: `daemon.mode: 'external'`, where something
+   * else owns the daemon's lifecycle (docker compose), and any read-only query -
+   * answering "what would my URL be" must not leave a process behind.
+   */
+  readonly spawn?: boolean;
   /** Path to the daemon, when the caller already knows it. */
   readonly proxyEntry?: string | null;
   /** Extra environment for the spawned daemon. */
@@ -107,6 +117,7 @@ export async function ensureProxy(
     mode = 'auto',
     wildcardPort = DEFAULT_WILDCARD_PORT,
     sharedPort = DEFAULT_SHARED_PORT,
+    spawn: maySpawn = true,
     proxyEntry = null,
     env = {},
     spawnPollAttempts = SPAWN_POLL_ATTEMPTS,
@@ -181,7 +192,11 @@ export async function ensureProxy(
     spawnable.push(rung);
   }
 
-  // 3. Nothing running. Start one, lowest rung number first.
+  // 3. Nothing running. Start one, lowest rung number first - unless the caller has
+  //    forbidden that, in which case adopting was the only option and it failed.
+  if (!maySpawn) {
+    return direct('not-spawned');
+  }
   const entry = entryResolver.resolve(proxyEntry);
   if (entry === null) {
     return direct('no-daemon-entry');

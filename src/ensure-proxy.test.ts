@@ -359,3 +359,24 @@ function currentUid(): number | null {
   const uid = process.getuid?.();
   return typeof uid === 'number' ? uid : null;
 }
+
+describe('ensureProxy spawn: false', () => {
+  // `daemon.mode: 'external'` was documented in the config types from the first
+  // release and silently did nothing - ensureProxy always spawned. This is the
+  // behaviour it was supposed to have.
+  it('adopts a running daemon without spawning', async () => {
+    const { result, spawned } = await runTracking(
+      { onPort: { [DEFAULT_WILDCARD_PORT]: ours() } },
+      { spawn: false },
+    );
+    expect(result.mode).toBe('wildcard');
+    expect(result.started).toBe(false);
+    expect(spawned).toEqual([]);
+  });
+
+  it('falls to direct rather than starting one', async () => {
+    const { result, spawned } = await runTracking({}, { spawn: false });
+    expect(result).toMatchObject({ mode: 'direct', reason: 'not-spawned' });
+    expect(spawned).toEqual([]);
+  });
+});

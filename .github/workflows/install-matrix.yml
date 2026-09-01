@@ -1,0 +1,145 @@
+name: Install matrix
+
+# Proves the PACKED TARBALL works when really installed, across package managers and
+# platforms. Unit tests cover the daemon-path resolver with staged fixtures, which
+# cannot be wrong in the same ways a real install is.
+#
+# The case that earns this workflow: Yarn PnP with zip-compressed dependencies patches
+# `fs` but not `child_process`, so the daemon is readable and NOT spawnable and the
+# resolver has to notice and copy it out. That path had unit coverage only.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: install-matrix-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  pack:
+    name: pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: npm pack
+        # Packed once and shared, so every matrix leg installs the identical bytes a
+        # consumer would get. Packing per-leg would let a platform difference in the
+        # tarball hide behind a platform difference in the install.
+        run: |
+          mkdir -p dist-pack
+          npm pack --pack-destination dist-pack
+          mv dist-pack/*.tgz dist-pack/staghorn.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarball
+          path: dist-pack/staghorn.tgz
+          retention-days: 1
+
+  install:
+    name: ${{ matrix.pm }} (${{ matrix.os }})
+    needs: pack
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One package manager failing must not hide the rest - the whole point is to see
+      # which layouts work.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        pm: [npm, pnpm, pnpm-hoisted, yarn-nm, yarn-pnp, bun]
+        exclude:
+          # bun on Windows is not reliable enough on hosted runners to gate a PR on.
+          - os: windows-latest
+            pm: bun
+    defaults:
+      run:
+        # git-bash on Windows, so one script works everywhere.
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: tarball
+          path: tarball
+
+      - if: matrix.pm == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Prepare the consumer fixture
+        run: |
+          mkdir -p fixture
+          cd fixture
+          cat > package.json <<'JSON'
+          { "name": "staghorn-install-fixture", "private": true, "version": "0.0.0" }
+          JSON
+
+      - name: Install the tarball
+        working-directory: fixture
+        run: |
+          TARBALL="$(cd .. && pwd)/tarball/staghorn.tgz"
+          # Yarn only: a RELATIVE path. On Windows git-bash the absolute form starts
+          # with a drive letter (`D:/a/...`), and Yarn's descriptor parser reads
+          # anything that does not start with `/` as `package-name@range` rather than
+          # a path. A `../` path has no drive letter to misread on any platform.
+          TARBALL_REL="../tarball/staghorn.tgz"
+          case "${{ matrix.pm }}" in
+            npm)          npm install --no-audit --no-fund -D "$TARBALL" ;;
+            pnpm)         corepack enable && corepack prepare pnpm@latest --activate
+                          pnpm add -D "$TARBALL" ;;
+            pnpm-hoisted) corepack enable && corepack prepare pnpm@latest --activate
+                          echo 'node-linker=hoisted' > .npmrc
+                          pnpm add -D "$TARBALL" ;;
+            # The empty lockfile marks the fixture as its own Yarn project, and has to be
+            # there BEFORE the first yarn command. Yarn is the only package manager here
+            # that finds a project root by walking UP: without the marker it adopts the
+            # checkout above, writes `packageManager` and `.yarnrc.yml` into it, and then
+            # refuses the fixture as not part of that project.
+            yarn-nm)      touch yarn.lock
+                          corepack enable && yarn set version stable
+                          yarn config set nodeLinker node-modules
+                          yarn add -D "$TARBALL_REL" ;;
+            yarn-pnp)     touch yarn.lock
+                          corepack enable && yarn set version stable
+                          # PnP with zip-compressed deps: the case that motivates this job.
+                          yarn config set nodeLinker pnp
+                          yarn config set compressionLevel mixed
+                          yarn add -D "$TARBALL_REL" ;;
+            bun)          bun add -d "$TARBALL" ;;
+          esac
+
+      - name: Smoke-test the install
+        working-directory: fixture
+        run: |
+          SMOKE="$(cd .. && pwd)/scripts/smoke-install.mjs"
+          case "${{ matrix.pm }}" in
+            # Under PnP, plain `node` cannot resolve dependencies at all - the resolver
+            # lives in Yarn's loader - so the script must run through `yarn node`. And
+            # here the daemon MUST have been copied out of the zip.
+            yarn-pnp) yarn node "$SMOKE" --expect-relocated ;;
+            *)        node "$SMOKE" ;;
+          esac
+
+  matrix-result:
+    name: install matrix result
+    needs: install
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # A single job to depend on, so a skipped or cancelled leg cannot be mistaken for
+      # a pass.
+      - run: |
+          if [ "${{ needs.install.result }}" != "success" ]; then
+            echo "::error::install matrix did not pass (${{ needs.install.result }})"
+            exit 1
+          fi
+          echo "all package managers installed and smoke-tested"
