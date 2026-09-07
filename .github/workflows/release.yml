@@ -26,9 +26,6 @@ jobs:
           cache: npm
 
       - name: Set up JFrog CLI
-        # Exchanges the workflow's GitHub OIDC JWT for a short-lived Artifactory
-        # access token. No org-level secret involved. The action calls
-        # core.setSecret() on both outputs, so they are masked in the log.
         id: jfrog
         uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -82,4 +79,4 @@ jobs:
           commit: 'chore: version packages'
           title: 'chore: version packages'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
