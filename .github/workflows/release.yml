@@ -11,7 +11,7 @@ concurrency:
 permissions:
   contents: write # changesets pushes the version branch and tags
   pull-requests: write # and opens the "Version Packages" PR
-  id-token: write # OIDC, for provenance once this publishes to public npm
+  id-token: write # OIDC, both for the JFrog token exchange and for npm provenance later
 
 jobs:
   release:
@@ -25,37 +25,46 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Set up JFrog CLI
+        # Exchanges the workflow's GitHub OIDC JWT for a short-lived Artifactory
+        # access token. No org-level secret involved. The action calls
+        # core.setSecret() on both outputs, so they are masked in the log.
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://cgx.jfrog.io
+        with:
+          oidc-provider-name: github
+          oidc-audience: jfrog-github
+
       - name: Authenticate to the internal registry
-        # Basic auth from the ORG-LEVEL secrets, which already reach this repo - no
-        # per-repo secret to request. `JFROG_USER` + `JFROG_PASSWORD` is the method
-        # confirmed working for JFrog npm publishes elsewhere in the org;
-        # `ARTIFACTORY_USERNAME` was removed org-wide and no longer works.
+        # npm takes the exchanged token as a bearer token, so `_authToken` replaces
+        # the base64 `_auth` blob and JFROG_USER/JFROG_PASSWORD are gone.
         #
         # At the open-source flip this whole step is deleted and replaced by npm
         # Trusted Publishing (OIDC), which needs no credential at all - the same
         # mechanism coralogix-browser-sdk already publishes @coralogix/browser with.
         run: |
-          auth=$(printf '%s:%s' "$JFROG_USER" "$JFROG_PASSWORD" | base64 | tr -d '\n')
           umask 077
           cat >> "$HOME/.npmrc" <<NPMRC
           @cx:registry=https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/
-          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:_auth=${auth}
+          //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:_authToken=${JFROG_TOKEN}
           //cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/:always-auth=true
           NPMRC
         env:
-          JFROG_USER: ${{ secrets.JFROG_USER }}
-          JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+          JFROG_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Verify the credential can actually reach the registry
         # `npm publish --dry-run` never contacts the registry, so it cannot tell us
-        # whether the credential works. `whoami` does. It is the difference between
+        # whether the token works. `whoami` does. It is the difference between
         # "the tarball looks right" and "we are allowed to upload it", and the second
         # is the only open question - reading that registry is already anonymous, so
-        # only DEPLOY permission is in doubt.
+        # only DEPLOY permission is in doubt. Expect the OIDC username here, not a
+        # human one.
         continue-on-error: true
         run: |
           npm whoami --registry=https://cgx.jfrog.io/artifactory/api/npm/internal.npm.coralogix.net/ \
-            || echo "::warning::the JFrog credential did not authenticate; publish will likely fail with E401/E403"
+            || echo "::warning::the OIDC token did not authenticate; check the identity mapping and the gh-oidc-artifactory group"
 
       - run: npm ci
       - run: npm run typecheck
