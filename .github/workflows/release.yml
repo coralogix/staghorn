@@ -1,0 +1,200 @@
+name: Release
+
+# Manual release. Pick a bump level and the workflow:
+#   1. resolves the next version from the latest `v*` git tag (not from
+#      package.json - the in-repo version is intentionally frozen and the tag is
+#      authoritative),
+#   2. stamps that version into package.json ephemerally in CI,
+#   3. publishes to the public npm registry under the `@coralogix` scope via npm
+#      trusted publishing (OIDC) - no token; the job's `id-token: write` grant lets
+#      npm mint short-lived credentials, and the package must have a trusted
+#      publisher configured on npmjs.com (repo `coralogix/staghorn`, workflow
+#      `release.yml`). Provenance is generated automatically,
+#   4. tags the workflow's source commit `vX.Y.Z` and pushes only the tag.
+#
+# Nothing is ever pushed to the default branch. The stamped package.json edit is
+# discarded when the runner exits; the in-repo version stays at its initial value
+# forever. The git tag is the sole source of truth for "what have we released".
+# This sidesteps branch protection (signed commits + PR-only) without giving the
+# workflow any privileged access.
+#
+# If the publish step fails, nothing is tagged - the runner simply exits. If publish
+# succeeded but the tag push failed, the package is already on npm; re-create the tag
+# from the workflow run's SHA.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: Dry-run (skip npm publish and the tag push)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two concurrent dispatches would compute the same `next` version from the same tag,
+# and the second would fail with "version already exists" on npm. `cancel-in-progress:
+# false` lets the first finish rather than killing it partway.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve next version
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      # fetch-depth: 0 so git can see previous `v*` tags.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: next
+        shell: bash
+        run: |
+          set -euo pipefail
+          # `|| true` because the grep finds nothing on a repo that has never
+          # released, and pipefail would otherwise abort the whole step.
+          latest_tag=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          current="${latest_tag#v}"
+          current="${current:-0.0.0}"
+          next=$(node -e "
+            const [maj, min, pat] = process.argv[1].split('.').map(Number);
+            const bump = process.argv[2];
+            if (bump === 'patch') console.log(\`\${maj}.\${min}.\${pat + 1}\`);
+            else if (bump === 'minor') console.log(\`\${maj}.\${min + 1}.0\`);
+            else if (bump === 'major') console.log(\`\${maj + 1}.0.0\`);
+            else { console.error('unknown bump ' + bump); process.exit(1); }
+          " "$current" "${{ inputs.bump }}")
+          echo "version=${next}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${next}" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Release plan"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Current | \`${current}\` (from ${latest_tag:-no tag found}) |"
+            echo "| Bump | \`${{ inputs.bump }}\` |"
+            echo "| Next | \`${next}\` |"
+            echo "| Dry-run | \`${{ inputs.dry_run }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish to npm and tag
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      # Required for npm trusted publishing: lets the job request an OIDC token
+      # that npm exchanges for short-lived publish credentials.
+      id-token: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      # Default checkout (GITHUB_SHA) plus full history so the tag can be created at
+      # the end. No `ref:` to the tag - it does not exist yet.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # `registry-url` points npm at the public registry. No auth token is written:
+      # trusted publishing supplies credentials via OIDC at publish time.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      # Node 24 bundles npm 11.3.x; trusted publishing needs >= 11.5.1.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # MUST precede the build. tsup reads `version` from package.json at build time
+      # and injects it as __STAGHORN_VERSION__ (see src/version.ts), so stamping
+      # afterwards would publish a dist that reports the frozen 0.0.0 forever.
+      # Ephemeral: discarded with the runner. `--no-git-tag-version` keeps npm from
+      # creating its own commit and tag, which is the whole point of this design.
+      - name: Stamp the version
+        run: npm version "${VERSION}" --no-git-tag-version --allow-same-version
+
+      - run: npm run build
+      - run: npm run check:pkg
+      - run: npm run check:scrub
+      - run: npm run license:check
+
+      # The stamped version has to reach the built artifact, not just the manifest.
+      - name: Assert the build carries the stamped version
+        run: |
+          set -euo pipefail
+          node -e "
+            const { VERSION } = require('./dist/index.cjs');
+            if (VERSION !== process.env.VERSION) {
+              console.error(\`dist reports \${VERSION}, expected \${process.env.VERSION}\`);
+              process.exit(1);
+            }
+            console.log('dist reports ' + VERSION);
+          "
+
+      - name: Publish (dry-run)
+        if: inputs.dry_run
+        run: npm publish --dry-run --access public
+
+      # Auth is OIDC trusted publishing - no token. `--access public` is required
+      # because a scoped package defaults to restricted. Provenance is automatic.
+      - name: Publish
+        if: '!inputs.dry_run'
+        run: npm publish --access public
+
+      # Only after publish succeeds, so a failed publish leaves the remote tag-less.
+      # We deliberately do NOT commit: branch protection (verified signatures,
+      # PR-only) would reject it, and the tag is the authoritative record.
+      - name: Tag the release
+        if: '!inputs.dry_run'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release ${TAG}" "${GITHUB_SHA}"
+          git push origin "${TAG}"
+
+      - name: Create the GitHub release
+        if: '!inputs.dry_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${TAG}" --title "${TAG}" --generate-notes
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Release ${TAG}"
+            echo ""
+            if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+              echo "- Mode: **dry-run** (no registry write, no tag)"
+            else
+              echo "- Published \`@coralogix/staghorn@${VERSION}\` to npm"
+              echo "- Pushed tag \`${TAG}\` at \`${GITHUB_SHA}\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest something staghorn should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >-
+        What are you trying to do that staghorn makes hard or impossible? Describe the
+        situation rather than the solution, so the fix is not constrained to the one
+        you already have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you do today instead
+      description: >-
+        Even an ugly workaround is useful: it shows which part actually hurts.
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: >-
+        If it needs configuration, sketch the config. Note that staghorn has zero
+        runtime dependencies and intends to keep it that way, so a proposal that needs
+        one will be weighed against that.
+    validations:
+      required: false

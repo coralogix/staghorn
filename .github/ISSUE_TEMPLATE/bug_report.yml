@@ -1,0 +1,59 @@
+name: Bug report
+description: Something does not behave the way the README says it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `staghorn doctor` answers most of the environment questions below in one
+        command. Pasting its output is usually faster than filling these in by hand.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you got instead.
+      placeholder: |
+        $ npx staghorn -- npm run dev
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: staghorn doctor
+      description: Output of `npx staghorn doctor`.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: rung
+    attributes:
+      label: Which rung did it land on
+      description: >-
+        The banner says: a portless hostname is the wildcard rung, a `:4180` hostname
+        is the shared rung, and `localhost:<port>` means no proxy at all.
+      placeholder: portless / :4180 / direct
+    validations:
+      required: false
+
+  - type: input
+    id: package-manager
+    attributes:
+      label: Package manager
+      placeholder: npm 11.5.1 / pnpm 10 / yarn 4 (pnp) / bun 1.2
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: >-
+        Safari does not implement the `*.localhost` rule and cannot resolve these
+        hostnames. See "Known limitations" in the README before filing.
+      placeholder: Chrome 141
+    validations:
+      required: false

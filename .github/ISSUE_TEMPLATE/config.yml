@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/coralogix/staghorn/security/advisories/new
+    about: >-
+      Please do not open a public issue. Report privately here, or email
+      security@coralogix.com. See SECURITY.md.
+  - name: Question about setup
+    url: https://github.com/coralogix/staghorn#readme
+    about: >-
+      The README covers the fallback ladder, Safari, HTTPS, OAuth redirects and
+      corporate proxies. `npx staghorn doctor` diagnoses most machine-specific issues.

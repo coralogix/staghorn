@@ -1,0 +1,36 @@
+version: 2
+
+# This package has zero runtime dependencies, so nothing here reaches a consumer.
+# It still matters: the devDependencies run in CI, and a stale one is a supply-chain
+# surface for the release job. Grouped so a quiet week produces one pull request per
+# ecosystem rather than a dozen. Security updates are deliberately left ungrouped by
+# GitHub and arrive as their own pull requests regardless of the schedule below.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: 'build(deps)'
+
+  # Pinned action versions go stale silently and are a supply-chain surface in their
+  # own right. The release workflow publishes to npm via OIDC, so an action running
+  # in that job can request the publish token.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: 'ci(deps)'
