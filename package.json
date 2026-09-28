@@ -75,6 +75,15 @@
   "engines": {
     "node": ">=20.11.0"
   },
+  "//overrides": "Dev-only transitives with published advisories. Scoped to their parents on purpose: a blanket vite override would drag vitest 5 back from vite 8 to 6. Nothing here ships - the package has zero runtime dependencies and files is dist/README/LICENSE/NOTICE - so these only affect the test run and the docs build.",
+  "overrides": {
+    "vitepress": {
+      "vite": "^6.4.3"
+    },
+    "tsup": {
+      "esbuild": "^0.28.1"
+    }
+  },
   "//publishConfig": "A scoped package is restricted by default, so access must be stated. Provenance is generated automatically under npm trusted publishing, and is declared here so a manual publish cannot silently omit it.",
   "publishConfig": {
     "access": "public",
