@@ -8,7 +8,12 @@
     "dev-server",
     "reverse-proxy",
     "git-worktree",
+    "worktree",
     "subdomain",
+    "multi-tenant",
+    "monorepo",
+    "local-development",
+    "hosts-file",
     "vite",
     "developer-experience"
   ],

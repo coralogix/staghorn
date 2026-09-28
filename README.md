@@ -59,6 +59,25 @@ hostname.
   production. Separate hostnames also mean separate cookie jars and separate
   `localStorage`, so two branches cannot corrupt each other's session.
 
+## If your app reads the subdomain
+
+An app that resolves a tenant, team or workspace from the host cannot be exercised on
+`localhost:5173` at all, because there is no subdomain there to read. The usual
+workarounds are a hand-maintained `/etc/hosts`, a dnsmasq config, or a local Caddy in
+front of the dev server - per developer, per machine, and stale the moment someone
+adds a tenant.
+
+Any prefix above the route is accepted and forwarded to the same dev server, so this
+works with nothing to install and nothing to keep up to date:
+
+```
+acme.feature-x.myapp.localhost      ->  feature-x.myapp
+globex.feature-x.myapp.localhost    ->  feature-x.myapp
+```
+
+Your app reads `acme` or `globex` off the `Host` header exactly as it does in
+production. Testing another tenant means typing another URL.
+
 ## How it works
 
 Four parts, in order of how much you need to care:
