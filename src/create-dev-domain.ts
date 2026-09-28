@@ -309,14 +309,8 @@ export async function createDevDomain(
   // Ctrl-C purely because it asked a question.
   if (!readOnly) {
     process.once('exit', cleanupSync);
-    process.once('SIGINT', () => {
-      cleanupSync();
-      process.exit(130);
-    });
-    process.once('SIGTERM', () => {
-      cleanupSync();
-      process.exit(143);
-    });
+    process.once('SIGINT', onSignal('SIGINT', 130, cleanupSync));
+    process.once('SIGTERM', onSignal('SIGTERM', 143, cleanupSync));
   }
 
   const urlsFor = (urlContext: UrlContext): readonly LabelledUrl[] => {
@@ -407,6 +401,31 @@ export async function createDevDomain(
 
   await config.hooks?.onResolved?.(buildUrlContext());
   return domain;
+}
+
+/**
+ * Clean up on a terminating signal, then exit ONLY if nothing else is listening.
+ *
+ * `process.once` removes the listener before invoking it, so by the time this runs
+ * the count reflects other listeners only. A wrapped command (`staghorn -- <cmd>`)
+ * registers its own handler to forward the signal to the child, and registers it
+ * after this one because it cannot spawn before the domain resolves. Node runs
+ * signal listeners in registration order, so exiting here unconditionally would run
+ * first and orphan that child, leaving a dev server holding its port with no route
+ * pointing at it. Deferring hands the decision to whoever else asked for the signal;
+ * with no such handler this stays exactly as it was, cleanup then exit.
+ */
+export function onSignal(
+  signal: NodeJS.Signals,
+  code: number,
+  cleanupSync: () => void,
+): () => void {
+  return () => {
+    cleanupSync();
+    if (process.listenerCount(signal) === 0) {
+      process.exit(code);
+    }
+  };
 }
 
 function activated(config: StaghornConfig, context: RepoContext): boolean {
