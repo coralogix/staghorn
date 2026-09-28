@@ -3,9 +3,9 @@
 Contributions are welcome. The full contributor guide lives in the repo alongside the
 code:
 
-- **[CONTRIBUTING.md](https://github.com/coralogix/staghorn/blob/master/CONTRIBUTING.md)** — dev setup, design constraints, tests, releases.
-- **[CLA.md](https://github.com/coralogix/staghorn/blob/master/CLA.md)** — the Coralogix Contributor License Agreement, enforced by CLA Assistant on your first pull request.
-- **[SECURITY.md](https://github.com/coralogix/staghorn/blob/master/SECURITY.md)** — reporting vulnerabilities responsibly.
+- **[CONTRIBUTING.md](https://github.com/coralogix/staghorn/blob/main/CONTRIBUTING.md)** — dev setup, design constraints, tests, releases.
+- **[CLA.md](https://github.com/coralogix/staghorn/blob/main/CLA.md)** — the Coralogix Contributor License Agreement, enforced by CLA Assistant on your first pull request.
+- **[SECURITY.md](https://github.com/coralogix/staghorn/blob/main/SECURITY.md)** — reporting vulnerabilities responsibly.
 
 ## Quick dev loop
 
@@ -45,4 +45,4 @@ npm run docs:dev      # local preview with hot reload
 npm run docs:build    # what CI publishes
 ```
 
-The site is published to GitHub Pages from `master`.
+The site is published to GitHub Pages by running the **Docs** workflow from `main`.

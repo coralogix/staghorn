@@ -3,7 +3,7 @@
 ## Wrap what you already run
 
 ```bash
-npx staghorn -- npm run dev
+npx @coralogix/staghorn -- npm run dev
 ```
 
 ```
@@ -39,7 +39,10 @@ npm install -D @coralogix/staghorn
 }
 ```
 
-`staghorn` and `stag` are the same command.
+`staghorn` and `stag` are the same command. Inside `package.json` scripts the bare name
+works; on the command line, `npx @coralogix/staghorn` finds the installed copy and
+falls back to the registry. Never shorten that to `npx staghorn`: there is no unscoped
+`staghorn` package, so outside a project that depends on it the command fails.
 
 ## Requirements
 
@@ -49,11 +52,11 @@ each of those is covered by CI on Linux, macOS and Windows.
 ## Check your machine
 
 ```bash
-npx staghorn doctor
+npx @coralogix/staghorn doctor
 ```
 
 ```
-staghorn 0.1.0
+staghorn 0.1.1
 
 platform    darwin (node 24.15.0)
 state dir   /Users/you/.staghorn
@@ -69,7 +72,7 @@ flags machine-specific problems like a corporate proxy intercepting `*.localhost
 ## See what is running
 
 ```bash
-npx staghorn list
+npx @coralogix/staghorn list
 ```
 
 ```

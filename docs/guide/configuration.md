@@ -1,7 +1,7 @@
 # Configuration
 
-None is required. When you want it, `staghorn.config.ts` (or `.mjs`, `.json`, or a
-`staghorn` key in `package.json`):
+None is required. When you want it, `staghorn.config.ts` (or `.mts`, `.mjs`, `.js`,
+`.cjs`, `.json`, or a `staghorn` key in `package.json`):
 
 ```ts
 import { defineConfig } from '@coralogix/staghorn/config';
@@ -23,6 +23,13 @@ export default defineConfig({
 });
 ```
 
+::: tip TypeScript config needs a Node that strips types
+A `.ts` or `.mts` config is imported directly, with no bundler in between. That works
+out of the box on Node 22.18+ and 23.6+, and on Node 22.6+ with
+`--experimental-strip-types`. On older Node, name the file `staghorn.config.mjs`: the
+contents are the same, and Staghorn's error message says so if it cannot load a `.ts`.
+:::
+
 ## Layers
 
 Low to high: defaults, user config, project config, `STAGHORN_*` environment, CLI flags,
@@ -33,7 +40,7 @@ project config - the person on Safari, or the one whose corporate software owns 
 does not have to argue with a committed file.
 
 ```bash
-npx staghorn config --print
+npx @coralogix/staghorn config --print
 ```
 
 shows the resolved config **and where every single value came from**, which is usually
@@ -43,15 +50,18 @@ faster than reasoning about the precedence rules.
 
 These mirror the config keys:
 
-| Variable | Effect |
-| --- | --- |
-| `STAGHORN_DISABLE` | Turn Staghorn off entirely; your command runs untouched |
-| `STAGHORN_TLD` | Override the tld |
-| `STAGHORN_MODE` | Force a rung of the fallback ladder |
-| `STAGHORN_PORT` | Force the proxy port |
-| `STAGHORN_PROJECT` | Override the project label |
-| `STAGHORN_STATE_DIR` | Move `~/.staghorn` elsewhere |
-| `STAGHORN_LOG` | Log level |
+| Variable | Effect | Accepted values |
+| --- | --- | --- |
+| `STAGHORN_DISABLE` | Turn Staghorn off entirely; your command runs untouched | `1` or `true` |
+| `STAGHORN_TLD` | Override the tld | any tld, e.g. `localtest.me` |
+| `STAGHORN_MODE` | Force a rung of the fallback ladder | `auto`, `wildcard`, `sharedPort`, `direct` |
+| `STAGHORN_PORT` | Pin the **dev server's** port (`ports.strategy: 'fixed'`) | a port number |
+| `STAGHORN_PROJECT` | Override the project label | a label, or `false` to drop it |
+| `STAGHORN_STATE_DIR` | Move `~/.staghorn` elsewhere | a directory path |
+| `STAGHORN_LOG` | Log level | `silent`, `error`, `warn`, `info`, `debug` |
+
+An unrecognised value is ignored rather than guessed at, so `STAGHORN_DISABLE=yes` does
+nothing. `staghorn config --print` shows whether a variable took effect.
 
 `STAGHORN_DISABLE` is the one to remember. It is the escape hatch for CI, for a
 teammate who wants nothing to do with this, and for bisecting whether Staghorn is
@@ -74,3 +84,29 @@ an SSO bookmark, a proxy allowlist, an OAuth redirect URI.
 
 Either way a checkout reclaims the port it already holds in the registry, so restarts
 keep their port.
+
+## What your dev server receives
+
+The wrapped command inherits your environment plus:
+
+| Variable | Value |
+| --- | --- |
+| `STAGHORN_HOST` | The printed hostname, e.g. `feature-x.myapp.localhost` |
+| `STAGHORN_ORIGIN` | The same as an origin, e.g. `http://feature-x.myapp.localhost` |
+| `STAGHORN_ROUTE` | The route key, e.g. `feature-x.myapp` |
+| `STAGHORN_PORT` | The dev server's port |
+| `STAGHORN_MODE` | The rung it landed on |
+| `PORT` | The allocated port, with `--allocate` only |
+
+`--allocate` only helps a dev server that reads `PORT`. Many do (Next.js, most Express
+apps); Vite does not, so point it at the variable yourself:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  server: { port: Number(process.env.PORT) || 5173, strictPort: true },
+});
+```
+
+For anything else your app needs, `rewrite.env` adds variables of your own.
+

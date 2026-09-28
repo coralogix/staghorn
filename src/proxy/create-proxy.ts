@@ -131,7 +131,7 @@ export async function createProxy(
     upstreamHosts = UPSTREAM_HOSTS,
     forwardedHeaders = true,
     errorPage = renderErrorPage,
-    listCommand = 'npx staghorn list',
+    listCommand = 'npx @coralogix/staghorn list',
     refreshTtlMs = DEFAULT_REFRESH_TTL_MS,
     advertise = true,
   } = options;

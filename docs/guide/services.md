@@ -4,7 +4,7 @@ A checkout usually runs more than one thing: the app, Storybook, a mock API. Eac
 its own subdomain under the same branch hostname, routed by the same daemon.
 
 ```bash
-npx staghorn --service storybook -- npm run storybook
+npx @coralogix/staghorn --service storybook -- npm run storybook
 ```
 
 ```

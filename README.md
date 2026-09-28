@@ -2,8 +2,8 @@
   Built with 💚 by
   <a href="https://coralogix.com/?utm_source=github&amp;utm_medium=oss&amp;utm_campaign=Staghorn">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/coralogix/staghorn/master/assets/coralogix-horizontal-white-inline.svg">
-      <img src="https://raw.githubusercontent.com/coralogix/staghorn/master/assets/coralogix-horizontal-black-inline.svg" alt="Coralogix" height="24" align="middle">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/coralogix/staghorn/main/assets/coralogix-horizontal-white-inline.svg">
+      <img src="https://raw.githubusercontent.com/coralogix/staghorn/main/assets/coralogix-horizontal-black-inline.svg" alt="Coralogix" height="24" align="middle">
     </picture>
   </a>
 </p>
@@ -36,7 +36,7 @@ Named after the branching coral, *Acropora cervicornis*: many branches, one skel
 Wrap whatever you already run:
 
 ```bash
-npx staghorn -- npm run dev
+npx @coralogix/staghorn -- npm run dev
 ```
 
 ```
@@ -51,6 +51,24 @@ npx staghorn -- npm run dev
 No config file, no code change, no `--port` plumbing. Staghorn ran your command
 unchanged, learned the real port from its output, registered the route and printed the
 hostname.
+
+To keep it, add it to the project so everyone runs the same version:
+
+```bash
+npm install -D @coralogix/staghorn
+```
+
+```json
+{
+  "scripts": {
+    "dev": "staghorn -- vite"
+  }
+}
+```
+
+Once installed, the command is `staghorn` (or `stag`). Outside a project that depends
+on it, always spell out the scoped name, `npx @coralogix/staghorn`: there is no
+unscoped `staghorn` package.
 
 ## Why a hostname beats a port
 
@@ -176,10 +194,11 @@ team-a.feature-x.myapp.localhost            ->  feature-x.myapp
 ## Configuration
 
 None is required. When you want it, `staghorn.config.ts` (or `.mjs`, `.json`, or a
-`staghorn` key in `package.json`):
+`staghorn` key in `package.json`). A `.ts` config is imported directly, so it needs
+Node 22.18+ or 23.6+; on older Node use `.mjs`:
 
 ```ts
-import { defineConfig } from 'staghorn/config';
+import { defineConfig } from '@coralogix/staghorn/config';
 
 export default defineConfig({
   // Subdomain and path the printed URL uses, if your app wants them. `primary`
@@ -203,16 +222,18 @@ CLI flags, programmatic options, and finally the `overrides` block of the *user*
 config - so a developer's machine can always beat their team's project config.
 `staghorn config --print` shows where every value came from.
 
-Environment variables mirror the config keys: `STAGHORN_DISABLE`, `STAGHORN_TLD`,
-`STAGHORN_MODE`, `STAGHORN_PORT`, `STAGHORN_PROJECT`, `STAGHORN_STATE_DIR`,
-`STAGHORN_LOG`.
+Environment variables mirror the config keys: `STAGHORN_DISABLE=1`, `STAGHORN_TLD`,
+`STAGHORN_MODE`, `STAGHORN_PORT` (pins the dev server's port), `STAGHORN_PROJECT`,
+`STAGHORN_STATE_DIR`, `STAGHORN_LOG`. The
+[configuration guide](https://coralogix.github.io/staghorn/guide/configuration) lists
+the accepted values, and the variables your dev server receives.
 
 ## Programmatic use
 
 For a repo that already owns its dev script:
 
 ```ts
-import { createDevDomain } from 'staghorn';
+import { createDevDomain } from '@coralogix/staghorn';
 
 const domain = await createDevDomain({ ports: { strategy: 'allocate' } });
 await startMyServer(domain.port, { origin: domain.origin });

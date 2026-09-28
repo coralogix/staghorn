@@ -166,7 +166,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: `${GITHUB}/edit/master/docs/:path`,
+      pattern: `${GITHUB}/edit/main/docs/:path`,
       text: 'Edit this page on GitHub',
     },
 

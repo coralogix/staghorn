@@ -23,7 +23,7 @@ hero:
 features:
   - title: Wrap what you already run
     details: >-
-      npx staghorn -- npm run dev. It runs your command unchanged, learns the real
+      npx @coralogix/staghorn -- npm run dev. It runs your command unchanged, learns the real
       port from its output, registers the route and prints the hostname. No config
       file, no code change, no --port plumbing.
   - title: Stable, not order-dependent

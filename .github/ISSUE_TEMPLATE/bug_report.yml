@@ -14,7 +14,7 @@ body:
       label: What happened
       description: What you ran, what you expected, and what you got instead.
       placeholder: |
-        $ npx staghorn -- npm run dev
+        $ npx @coralogix/staghorn -- npm run dev
         ...
     validations:
       required: true
@@ -23,7 +23,7 @@ body:
     id: doctor
     attributes:
       label: staghorn doctor
-      description: Output of `npx staghorn doctor`.
+      description: Output of `npx @coralogix/staghorn doctor`.
       render: text
     validations:
       required: true

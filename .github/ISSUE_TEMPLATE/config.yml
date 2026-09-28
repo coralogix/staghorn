@@ -9,4 +9,4 @@ contact_links:
     url: https://github.com/coralogix/staghorn#readme
     about: >-
       The README covers the fallback ladder, Safari, HTTPS, OAuth redirects and
-      corporate proxies. `npx staghorn doctor` diagnoses most machine-specific issues.
+      corporate proxies. `npx @coralogix/staghorn doctor` diagnoses most machine-specific issues.
