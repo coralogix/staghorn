@@ -66,9 +66,11 @@ npm install -D @coralogix/staghorn
 }
 ```
 
-Once installed, the command is `staghorn` (or `stag`). Outside a project that depends
-on it, always spell out the scoped name, `npx @coralogix/staghorn`: there is no
-unscoped `staghorn` package.
+Once installed, the command is `staghorn`, or its alias `stag`.
+
+> **Warning:** do not run `npx staghorn` or `npx stag` on their own. Those short names
+> only resolve inside a project that already has `@coralogix/staghorn` installed.
+> Anywhere else, use the full scoped name: `npx @coralogix/staghorn`.
 
 ## Why a hostname beats a port
 
@@ -165,7 +167,7 @@ staghorn doctor              diagnose this machine
 staghorn config --print      show the resolved config, and where each value came from
 ```
 
-`staghorn` and `stag` are the same command. `--json` works on `list`, `url`, `status`
+`staghorn` and `stag` are the same command once installed. `--json` works on `list`, `url`, `status`
 and `config`.
 
 ## The hostname

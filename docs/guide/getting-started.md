@@ -41,8 +41,13 @@ npm install -D @coralogix/staghorn
 
 `staghorn` and `stag` are the same command. Inside `package.json` scripts the bare name
 works; on the command line, `npx @coralogix/staghorn` finds the installed copy and
-falls back to the registry. Never shorten that to `npx staghorn`: there is no unscoped
-`staghorn` package, so outside a project that depends on it the command fails.
+falls back to the registry.
+
+::: warning
+Do not run `npx staghorn` or `npx stag` on their own. Those short names only resolve
+inside a project that already has `@coralogix/staghorn` installed. Anywhere else, use
+the full scoped name: `npx @coralogix/staghorn`.
+:::
 
 ## Requirements
 

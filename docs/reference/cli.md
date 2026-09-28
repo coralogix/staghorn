@@ -1,6 +1,7 @@
 # CLI
 
-`staghorn` and `stag` are the same command.
+`staghorn` and `stag` are the same command once `@coralogix/staghorn` is installed.
+Without it installed, run `npx @coralogix/staghorn`, never `npx staghorn` or `npx stag`.
 
 ```
 staghorn -- <command>        run a dev server behind its own hostname
