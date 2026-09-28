@@ -45,7 +45,7 @@ These mirror the config keys:
 
 | Variable | Effect |
 | --- | --- |
-| `STAGHORN_DISABLE` | Turn staghorn off entirely; your command runs untouched |
+| `STAGHORN_DISABLE` | Turn Staghorn off entirely; your command runs untouched |
 | `STAGHORN_TLD` | Override the tld |
 | `STAGHORN_MODE` | Force a rung of the fallback ladder |
 | `STAGHORN_PORT` | Force the proxy port |
@@ -54,7 +54,7 @@ These mirror the config keys:
 | `STAGHORN_LOG` | Log level |
 
 `STAGHORN_DISABLE` is the one to remember. It is the escape hatch for CI, for a
-teammate who wants nothing to do with this, and for bisecting whether staghorn is
+teammate who wants nothing to do with this, and for bisecting whether Staghorn is
 involved in a problem at all.
 
 ## Ports

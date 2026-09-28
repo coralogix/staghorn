@@ -1,6 +1,6 @@
 # Known limitations
 
-These are the things staghorn deliberately does not do, and the environments where it
+These are the things Staghorn deliberately does not do, and the environments where it
 needs help. All of them are better known up front than discovered at 6pm.
 
 ## Safari
@@ -25,7 +25,7 @@ far as the browser is concerned.
 
 If your app genuinely needs TLS - WebAuthn, or an identity provider that refuses
 `http://` redirect URIs - supply your own certificate from
-[mkcert](https://github.com/FiloSottile/mkcert). staghorn will never generate
+[mkcert](https://github.com/FiloSottile/mkcert). Staghorn will never generate
 certificates or install a certificate authority into your trust store. Putting a root CA
 into someone's keychain is not a thing a dev convenience should do silently.
 

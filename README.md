@@ -1,6 +1,6 @@
 <p>
   Built with 💚 by
-  <a href="https://coralogix.com/?utm_source=github&amp;utm_medium=oss&amp;utm_campaign=staghorn">
+  <a href="https://coralogix.com/?utm_source=github&amp;utm_medium=oss&amp;utm_campaign=Staghorn">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/coralogix/staghorn/master/assets/coralogix-horizontal-white-inline.svg">
       <img src="https://raw.githubusercontent.com/coralogix/staghorn/master/assets/coralogix-horizontal-black-inline.svg" alt="Coralogix" height="24" align="middle">
@@ -8,9 +8,9 @@
   </a>
 </p>
 
-# staghorn
+# Staghorn
 
-📖 **Docs:** [staghorn documentation](https://coralogix.github.io/staghorn/)
+📖 **Docs:** [Staghorn documentation](https://coralogix.github.io/staghorn/)
 
 Every git branch gets its own localhost hostname instead of a port.
 
@@ -43,7 +43,7 @@ npx staghorn -- npm run dev
   VITE v6.0.0  ready in 412 ms
 ```
 
-No config file, no code change, no `--port` plumbing. staghorn ran your command
+No config file, no code change, no `--port` plumbing. Staghorn ran your command
 unchanged, learned the real port from its output, registered the route and printed the
 hostname.
 
@@ -63,7 +63,7 @@ hostname.
 
 Four parts, in order of how much you need to care:
 
-1. **Your dev server** binds whatever port it likes. staghorn does not care which.
+1. **Your dev server** binds whatever port it likes. Staghorn does not care which.
 2. **A route file** in `~/.staghorn/routes/` maps `feature-x.myapp` to that port. One
    file per route, so two dev servers starting at the same instant cannot lose each
    other's registration.
@@ -90,7 +90,7 @@ Edge implement this. **Safari does not** - see [Safari](#safari).
 
 ## The fallback ladder
 
-staghorn never fails in a way that stops your dev server. If a rung is unavailable it
+Staghorn never fails in a way that stops your dev server. If a rung is unavailable it
 takes the next one and prints one line saying so. **The hostname is identical on every
 rung** - only the port appears - so a bookmark survives a degrade.
 
@@ -238,7 +238,7 @@ internet access and is not a secure context.
 Dev stays plain HTTP, which is fine because `*.localhost` is already a secure context.
 If your app genuinely needs TLS (WebAuthn, or an identity provider that refuses
 `http://` redirect URIs), supply your own certificate from
-[mkcert](https://github.com/FiloSottile/mkcert). staghorn will never generate
+[mkcert](https://github.com/FiloSottile/mkcert). Staghorn will never generate
 certificates or install a certificate authority into your trust store.
 
 ### Fixed-origin OAuth redirects

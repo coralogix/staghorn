@@ -15,7 +15,7 @@ npx staghorn -- npm run dev
   VITE v6.0.0  ready in 412 ms
 ```
 
-No config file, no code change, no `--port` plumbing. staghorn ran your command
+No config file, no code change, no `--port` plumbing. Staghorn ran your command
 unchanged, learned the real port from its output, registered the route and printed the
 hostname.
 
@@ -24,7 +24,7 @@ always have a way in even if something about the proxy is wrong on your machine.
 
 ## Install it
 
-Running through `npx` is fine, but a project that uses staghorn should depend on it so
+Running through `npx` is fine, but a project that uses Staghorn should depend on it so
 everyone gets the same version:
 
 ```bash

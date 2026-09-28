@@ -1,6 +1,6 @@
-# What is staghorn?
+# What is Staghorn?
 
-staghorn gives every git branch its own localhost hostname instead of a port.
+Staghorn gives every git branch its own localhost hostname instead of a port.
 
 ```
 http://feature-x.myapp.localhost        not  http://localhost:5173
