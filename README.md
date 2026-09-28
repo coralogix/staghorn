@@ -33,10 +33,25 @@ Named after the branching coral, *Acropora cervicornis*: many branches, one skel
 
 ## Quickstart
 
-Wrap whatever you already run:
+Install it in your project:
 
 ```bash
-npx @coralogix/staghorn -- npm run dev
+npm install -D @coralogix/staghorn
+```
+
+(or `pnpm add -D`, `yarn add -D`, `bun add -d`), then put `staghorn --` in front of the
+dev script you already have:
+
+```json
+{
+  "scripts": {
+    "dev": "staghorn -- vite"
+  }
+}
+```
+
+```bash
+npm run dev
 ```
 
 ```
@@ -50,27 +65,21 @@ npx @coralogix/staghorn -- npm run dev
 
 No config file, no code change, no `--port` plumbing. Staghorn ran your command
 unchanged, learned the real port from its output, registered the route and printed the
-hostname.
+hostname. `staghorn` and its alias `stag` are the same command.
 
-To keep it, add it to the project so everyone runs the same version:
+To try it once without installing, use the full scoped name:
 
 ```bash
-npm install -D @coralogix/staghorn
+npx @coralogix/staghorn -- npm run dev
 ```
 
-```json
-{
-  "scripts": {
-    "dev": "staghorn -- vite"
-  }
-}
-```
+(or `pnpm dlx @coralogix/staghorn`, `yarn dlx @coralogix/staghorn`,
+`bunx @coralogix/staghorn`).
 
-Once installed, the command is `staghorn`, or its alias `stag`.
-
-> **Warning:** do not run `npx staghorn` or `npx stag` on their own. Those short names
-> only resolve inside a project that already has `@coralogix/staghorn` installed.
-> Anywhere else, use the full scoped name: `npx @coralogix/staghorn`.
+> **Warning:** never shorten the package name when running it without installing.
+> `npx staghorn`, `npx stag`, `pnpm dlx staghorn`, `bunx stag` and the like only
+> resolve inside a project that already has `@coralogix/staghorn` installed. Anywhere
+> else, always use the full scoped name.
 
 ## Why a hostname beats a port
 

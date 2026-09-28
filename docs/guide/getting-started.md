@@ -1,9 +1,40 @@
 # Getting started
 
+## Install it
+
+::: code-group
+
+```bash [npm]
+npm install -D @coralogix/staghorn
+```
+
+```bash [pnpm]
+pnpm add -D @coralogix/staghorn
+```
+
+```bash [yarn]
+yarn add -D @coralogix/staghorn
+```
+
+```bash [bun]
+bun add -d @coralogix/staghorn
+```
+
+:::
+
+Depending on it, rather than running it ad hoc, means everyone on the project gets the
+same version.
+
 ## Wrap what you already run
 
-```bash
-npx @coralogix/staghorn -- npm run dev
+Put `staghorn --` in front of the dev script you already have:
+
+```json
+{
+  "scripts": {
+    "dev": "staghorn -- vite"
+  }
+}
 ```
 
 ```
@@ -22,31 +53,36 @@ hostname.
 Open the `url` line. The `direct` line is your dev server's own address, printed so you
 always have a way in even if something about the proxy is wrong on your machine.
 
-## Install it
-
-Running through `npx` is fine, but a project that uses Staghorn should depend on it so
-everyone gets the same version:
-
-```bash
-npm install -D @coralogix/staghorn
-```
-
-```json
-{
-  "scripts": {
-    "dev": "staghorn -- vite"
-  }
-}
-```
-
 `staghorn` and `stag` are the same command. Inside `package.json` scripts the bare name
-works; on the command line, `npx @coralogix/staghorn` finds the installed copy and
-falls back to the registry.
+works; on the command line, `npx @coralogix/staghorn` finds the installed copy.
 
-::: warning
-Do not run `npx staghorn` or `npx stag` on their own. Those short names only resolve
-inside a project that already has `@coralogix/staghorn` installed. Anywhere else, use
-the full scoped name: `npx @coralogix/staghorn`.
+## Trying it without installing
+
+::: code-group
+
+```bash [npm]
+npx @coralogix/staghorn -- npm run dev
+```
+
+```bash [pnpm]
+pnpm dlx @coralogix/staghorn -- pnpm run dev
+```
+
+```bash [yarn]
+yarn dlx @coralogix/staghorn -- yarn run dev
+```
+
+```bash [bun]
+bunx @coralogix/staghorn -- bun run dev
+```
+
+:::
+
+::: warning Always use the full scoped name
+Never shorten the package name when running it without installing. `npx staghorn`,
+`npx stag`, `pnpm dlx staghorn`, `bunx stag` and the like only resolve inside a project
+that already has `@coralogix/staghorn` installed. Anywhere else, always use
+`@coralogix/staghorn`.
 :::
 
 ## Requirements
