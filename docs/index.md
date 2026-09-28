@@ -5,8 +5,10 @@ hero:
   name: Staghorn
   text: A localhost hostname per git branch
   tagline: >-
-    Every branch gets a stable, bookmarkable URL instead of a port that changes
-    between sessions. One shared reverse proxy, no runtime dependencies, no sudo.
+    Two branches running, and you can never remember which one is on 5173. Logging
+    into one clobbers the session in the other, because cookies ignore the port.
+    Staghorn gives every branch its own hostname instead: one shared reverse proxy,
+    no runtime dependencies, no sudo.
   actions:
     - theme: brand
       text: Get started

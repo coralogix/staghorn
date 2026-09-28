@@ -12,7 +12,12 @@
 
 📖 **Docs:** [Staghorn documentation](https://coralogix.github.io/staghorn/)
 
-Every git branch gets its own localhost hostname instead of a port.
+Two branches running at once, and you can never remember whether the review one is on
+5173 or 5174. Logging into one clobbers your session in the other, because cookies
+ignore the port: `localhost` is a single origin however many dev servers you put
+behind it. Bookmarks rot as soon as something starts in a different order.
+
+Staghorn gives every branch its own hostname instead.
 
 ```
 http://feature-x.myapp.localhost        not  http://localhost:5173
