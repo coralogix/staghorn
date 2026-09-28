@@ -59,7 +59,7 @@ import { defineConfig } from '@coralogix/staghorn/config';
 
 `defineConfig` is identity with types attached. Also exports `loadConfig`,
 `configFromEnv`, `DEFAULT_CONFIG` and `CONFIG_FILENAMES` for tooling that needs to
-resolve staghorn's configuration the same way staghorn does.
+resolve Staghorn's configuration the same way Staghorn does.
 
 ## `@coralogix/staghorn/testing`
 
@@ -68,7 +68,7 @@ directory:
 
 | Export | What it gives you |
 | --- | --- |
-| `createTempState()` | An isolated state dir, plus the env that points staghorn at it |
+| `createTempState()` | An isolated state dir, plus the env that points Staghorn at it |
 | `createGitFixture()` | A throwaway git repo, with worktrees and detached-HEAD support |
 | `createFakeUpstream()` | A server that records the requests it received |
 | `createFakeClock()` | Time you control |

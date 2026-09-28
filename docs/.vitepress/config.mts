@@ -52,7 +52,7 @@ function latestGitTag(): string | undefined {
 }
 
 export default defineConfig({
-  title: 'staghorn',
+  title: 'Staghorn',
   description: DESCRIPTION,
   base: BASE,
   lang: 'en-US',
@@ -62,23 +62,38 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}coralogix-mark.svg` }],
     ['meta', { name: 'theme-color', content: '#02763a' }],
+    // Nunito Sans + Inconsolata are the Coralogix design system's families, named in
+    // theme/custom.css. Served from Google Fonts rather than vendored: the design
+    // system ships TTFs, several hundred kB heavier than the woff2 the CDN negotiates.
+    // Without these the families in custom.css silently fall through to the defaults.
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+    [
+      'link',
+      {
+        rel: 'stylesheet',
+        href:
+          'https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400..800;1,6..12,400..800' +
+          '&family=Inconsolata:wght@400..700&display=swap',
+      },
+    ],
     ['meta', { property: 'og:type', content: 'website' }],
     [
       'meta',
       {
         property: 'og:title',
-        content: 'staghorn - a localhost hostname per git branch',
+        content: 'Staghorn - a localhost hostname per git branch',
       },
     ],
     ['meta', { property: 'og:description', content: DESCRIPTION }],
     ['meta', { property: 'og:url', content: SITE_URL }],
     ['meta', { name: 'twitter:card', content: 'summary' }],
-    ['meta', { name: 'twitter:title', content: 'staghorn' }],
+    ['meta', { name: 'twitter:title', content: 'Staghorn' }],
     ['meta', { name: 'twitter:description', content: DESCRIPTION }],
   ],
   themeConfig: {
     logo: { src: '/coralogix-mark.svg', width: 24, height: 24 },
-    siteTitle: 'staghorn',
+    siteTitle: 'Staghorn',
 
     nav: [
       { text: 'Guide', link: '/guide/introduction', activeMatch: '/guide/' },

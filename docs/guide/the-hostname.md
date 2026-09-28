@@ -27,7 +27,7 @@ team-a.feature-x.myapp.localhost            ->  feature-x.myapp
 ```
 
 That is what lets an app use subdomains of its own - per-tenant, per-team, per-locale -
-on top of a staghorn hostname without staghorn having to know anything about them.
+on top of a Staghorn hostname without Staghorn having to know anything about them.
 
 ## Branch slugging
 

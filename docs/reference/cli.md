@@ -23,7 +23,7 @@ staghorn config --print      show the resolved config and where each value came 
 Runs your command unchanged, learns its port, registers the route, prints the banner and
 holds a lease for as long as it lives.
 
-Everything after `--` is your command, verbatim. staghorn does not parse it, rewrite it,
+Everything after `--` is your command, verbatim. Staghorn does not parse it, rewrite it,
 or inject flags into it.
 
 ```bash
@@ -32,7 +32,7 @@ staghorn --service storybook -- npm run storybook
 staghorn --allocate -- node server.js
 ```
 
-The exit code is your command's exit code. If staghorn itself cannot do its job it
+The exit code is your command's exit code. If Staghorn itself cannot do its job it
 degrades a rung and warns; it does not change the outcome of what it wrapped.
 
 ## `staghorn list`
@@ -54,7 +54,7 @@ the daemon exits.
 
 ## `staghorn stop`
 
-Asks the daemon to shut down. Only a daemon that answers staghorn's own control path is
+Asks the daemon to shut down. Only a daemon that answers Staghorn's own control path is
 ever addressed; anything else on that port is left alone.
 
 You rarely need this - the daemon exits on its own about five seconds after the last dev

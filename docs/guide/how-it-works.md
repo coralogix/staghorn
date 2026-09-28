@@ -2,7 +2,7 @@
 
 Four parts, in order of how much you need to care.
 
-1. **Your dev server** binds whatever port it likes. staghorn does not care which.
+1. **Your dev server** binds whatever port it likes. Staghorn does not care which.
 2. **A route file** in `~/.staghorn/routes/` maps `feature-x.myapp` to that port. One
    file per route, so two dev servers starting at the same instant cannot lose each
    other's registration.
@@ -50,8 +50,8 @@ leases. Only the last one out turns off the lights.
 
 ## It never touches a server it does not own
 
-Anything answering the control port that is not staghorn is classified `foreign` and
-left strictly alone: not adopted, not shut down, not routed through. staghorn steps down
+Anything answering the control port that is not Staghorn is classified `foreign` and
+left strictly alone: not adopted, not shut down, not routed through. Staghorn steps down
 to the next rung of the [fallback ladder](/guide/fallback-ladder) instead.
 
 Shutting down a server you did not start is never yours to do, even on your own machine.

@@ -1,6 +1,6 @@
 # The fallback ladder
 
-staghorn never fails in a way that stops your dev server. If a rung is unavailable it
+Staghorn never fails in a way that stops your dev server. If a rung is unavailable it
 takes the next one and prints one line saying so.
 
 **The hostname is identical on every rung** - only the port appears - so a bookmark
@@ -26,17 +26,17 @@ sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80
 
 ## Why it degrades rather than fails
 
-staghorn wraps a dev server someone is actively working in. A convenience layer that can
+Staghorn wraps a dev server someone is actively working in. A convenience layer that can
 take that down is worse than no convenience layer, so every failure path ends at a lower
 rung rather than at an exception.
 
 The `direct` rung is not a degraded mode so much as the floor: it is your dev server's
-own address, which was always going to work. staghorn printing it means staghorn got out
+own address, which was always going to work. Staghorn printing it means Staghorn got out
 of the way.
 
 ## Why a foreign server never gets adopted
 
-If something is already listening and it is not staghorn, the daemon does not try to
+If something is already listening and it is not Staghorn, the daemon does not try to
 share the port, shut it down, or route through it. It steps down a rung.
 
 This is the behaviour you want the one time it matters: the thing on `:80` is nginx

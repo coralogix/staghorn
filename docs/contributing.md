@@ -29,14 +29,14 @@ yarn (node-modules and PnP) and bun.
 These are not style preferences. Breaking one is a bug even if the tests pass.
 
 - **Zero runtime dependencies.** Anything in `dependencies` is a defect.
-- **Nothing may take a dev server down.** staghorn wraps someone's working dev server; a
+- **Nothing may take a dev server down.** Staghorn wraps someone's working dev server; a
   failure degrades a rung and warns, it never throws into the wrapped process.
 - **Everything is injected** — clock, logger, paths, liveness checks, the port prober.
   That is what makes the suite runnable without sockets or daemons.
 - **No test binds a privileged port.** The listen address is configuration, so every case
   runs unprivileged on every platform.
 - **Never touch a daemon you do not own.** Anything answering the control port that is
-  not staghorn is left strictly alone.
+  not Staghorn is left strictly alone.
 
 ## The docs site
 

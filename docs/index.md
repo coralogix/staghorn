@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: staghorn
+  name: Staghorn
   text: A localhost hostname per git branch
   tagline: >-
     Every branch gets a stable, bookmarkable URL instead of a port that changes
@@ -12,7 +12,7 @@ hero:
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: What is staghorn?
+      text: What is Staghorn?
       link: /guide/introduction
     - theme: alt
       text: GitHub
