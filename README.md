@@ -12,7 +12,12 @@
 
 📖 **Docs:** [Staghorn documentation](https://coralogix.github.io/staghorn/)
 
-Every git branch gets its own localhost hostname instead of a port.
+Two branches running at once, and you can never remember whether the review one is on
+5173 or 5174. Logging into one clobbers your session in the other, because cookies
+ignore the port: `localhost` is a single origin however many dev servers you put
+behind it. Bookmarks rot as soon as something starts in a different order.
+
+Staghorn gives every branch its own hostname instead.
 
 ```
 http://feature-x.myapp.localhost        not  http://localhost:5173
@@ -52,12 +57,33 @@ hostname.
 - **Stable.** The URL is a function of your branch and project, not of what order you
   started things in. It stays bookmarkable across restarts.
 - **Parallel.** Several worktrees serve at once without colliding, and without anyone
-  having to remember that 5174 is the review branch.
+  having to remember that 5174 is the review branch. That includes the worktrees a
+  coding agent opens on your behalf, where the port arithmetic stops being tractable
+  fastest because nobody chose the order they started in.
 - **Honest cookies and origins.** `*.localhost` is a
   [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts),
   so `Secure` cookies, service workers and origin-sensitive APIs behave as they do in
   production. Separate hostnames also mean separate cookie jars and separate
   `localStorage`, so two branches cannot corrupt each other's session.
+
+## If your app reads the subdomain
+
+An app that resolves a tenant, team or workspace from the host cannot be exercised on
+`localhost:5173` at all, because there is no subdomain there to read. The usual
+workarounds are a hand-maintained `/etc/hosts`, a dnsmasq config, or a local Caddy in
+front of the dev server - per developer, per machine, and stale the moment someone
+adds a tenant.
+
+Any prefix above the route is accepted and forwarded to the same dev server, so this
+works with nothing to install and nothing to keep up to date:
+
+```
+acme.feature-x.myapp.localhost      ->  feature-x.myapp
+globex.feature-x.myapp.localhost    ->  feature-x.myapp
+```
+
+Your app reads `acme` or `globex` off the `Host` header exactly as it does in
+production. Testing another tenant means typing another URL.
 
 ## How it works
 

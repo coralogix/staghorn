@@ -5,8 +5,10 @@ hero:
   name: Staghorn
   text: A localhost hostname per git branch
   tagline: >-
-    Every branch gets a stable, bookmarkable URL instead of a port that changes
-    between sessions. One shared reverse proxy, no runtime dependencies, no sudo.
+    Two branches running, and you can never remember which one is on 5173. Logging
+    into one clobbers the session in the other, because cookies ignore the port.
+    Staghorn gives every branch its own hostname instead: one shared reverse proxy,
+    no runtime dependencies, no sudo.
   actions:
     - theme: brand
       text: Get started
@@ -34,6 +36,12 @@ features:
       *.localhost is a secure context, so Secure cookies, service workers and
       origin-sensitive APIs behave as they do in production. Separate hostnames mean
       separate cookie jars, so two branches cannot corrupt each other's session.
+  - title: Works for subdomain-per-tenant apps
+    details: >-
+      An app that reads a tenant, team or workspace off the host cannot be exercised
+      on localhost:5173 at all. Any prefix above the route reaches the same dev
+      server, so acme.feature-x.myapp.localhost just works, with no /etc/hosts, no
+      dnsmasq and no local Caddy to keep up to date.
   - title: It never takes your dev server down
     details: >-
       A fallback ladder degrades rung by rung and says so in one line. The hostname is
