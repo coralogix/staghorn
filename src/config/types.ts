@@ -3,10 +3,10 @@
 // The configuration surface.
 //
 // Two rules shaped this. First, the common case needs NO configuration at all -
-// `npx staghorn -- npm run dev` has to work in a repo that has never heard of
-// this package. Second, every assumption the tool makes has to have an escape
-// hatch, because the assumptions that are invisible in one repo are load-bearing in
-// the next.
+// `npx @coralogix/staghorn -- npm run dev` has to work in a repo that has never
+// heard of this package. Second, every assumption the tool makes has to have an
+// escape hatch, because the assumptions that are invisible in one repo are
+// load-bearing in the next.
 
 import type { RepoContext } from '../identity/context';
 import type { LogLevel, LogRecord } from '../log';

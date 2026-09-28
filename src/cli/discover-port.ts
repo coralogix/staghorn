@@ -4,7 +4,7 @@
 //
 // This is what makes the primary invocation need no configuration:
 //
-//   npx staghorn -- npm run dev
+//   npx @coralogix/staghorn -- npm run dev
 //
 // The alternative - allocate a port and require the consumer to bind it - forces
 // `--port {{port}}` into their command, which means every consumer has to know
