@@ -62,6 +62,13 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}coralogix-mark.svg` }],
     ['meta', { name: 'theme-color', content: '#02763a' }],
+    // Applies the remembered code-group tab before first paint, like VitePress's
+    // dark-mode script. The key must match STORAGE_KEY in theme/index.ts.
+    [
+      'script',
+      {},
+      "try{var t=localStorage.getItem('staghorn:code-group');if(t)document.documentElement.dataset.codeGroup=t}catch(e){}",
+    ],
     // Nunito Sans + Inconsolata are the Coralogix design system's families, named in
     // theme/custom.css. Served from Google Fonts rather than vendored: the design
     // system ships TTFs, several hundred kB heavier than the woff2 the CDN negotiates.

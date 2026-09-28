@@ -18,47 +18,33 @@
 // imported last so its overrides land after the theme's own stylesheets, which
 // matters for the same-specificity rules (e.g. the footer link underline).
 //
-// Code groups are synced by tab title: choosing `pnpm` in one group switches every
-// group on the site that has a `pnpm` tab, and the choice is remembered across pages.
-// VitePress keeps each group independent by default. Its own click handler also
-// scrolls the clicked tab into view, so the other groups are switched directly here
-// rather than by simulating clicks, which would jump the page to each of them.
+// Choosing a tab in one code group switches every group with a tab of the same title,
+// and is remembered across visits. The blocks are toggled directly, because VitePress's
+// own click handler scrolls the clicked tab into view and simulated clicks would jump
+// the page. The choice also lives on <html data-code-group>, which a <head> script in
+// config.mts sets before first paint so code-group-sync.css can avoid a flash.
 import { inBrowser, onContentUpdated } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { defineComponent, h } from 'vue'
 
 import './custom.css'
+import './code-group-sync.css'
 
 const STORAGE_KEY = 'staghorn:code-group'
 
-function remembered(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-function remember(title: string): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, title)
-  } catch {
-    // Private windows and blocked storage: the sync still works on this page.
-  }
-}
-
-// Checks the tab titled `title` in every group that has one, and shows its block.
-function selectEverywhere(title: string): void {
-  document.querySelectorAll<HTMLElement>('.vp-code-group').forEach((group) => {
-    const inputs = Array.from(group.querySelectorAll<HTMLInputElement>('.tabs input'))
-    const index = inputs.findIndex(
-      (input) => group.querySelector(`label[for="${input.id}"]`)?.dataset['title'] === title,
-    )
+function select(title: string): void {
+  document.documentElement.dataset['codeGroup'] = title
+  document.querySelectorAll('.vp-code-group').forEach((group) => {
+    const labels = Array.from(group.querySelectorAll('.tabs label'))
+    const index = labels.findIndex((label) => label.getAttribute('data-title') === title)
     const blocks = group.querySelector('.blocks')?.children
     if (index < 0 || !blocks) {
       return
     }
-    inputs[index].checked = true
+    const radio = labels[index].previousElementSibling
+    if (radio instanceof HTMLInputElement) {
+      radio.checked = true
+    }
     Array.from(blocks).forEach((block, i) => block.classList.toggle('active', i === index))
   })
 }
@@ -69,12 +55,14 @@ if (inBrowser) {
     if (!(input instanceof HTMLInputElement) || !input.matches('.vp-code-group input')) {
       return
     }
-    const title = document.querySelector<HTMLElement>(`label[for="${input.id}"]`)?.dataset[
-      'title'
-    ]
+    const title = input.nextElementSibling?.getAttribute('data-title')
     if (title) {
-      remember(title)
-      selectEverywhere(title)
+      select(title)
+      try {
+        localStorage.setItem(STORAGE_KEY, title)
+      } catch {
+        // Blocked storage: the choice still applies on this page.
+      }
     }
   })
 }
@@ -84,9 +72,13 @@ export default {
   Layout: defineComponent({
     setup() {
       onContentUpdated(() => {
-        const title = remembered()
-        if (title) {
-          selectEverywhere(title)
+        try {
+          const title = localStorage.getItem(STORAGE_KEY)
+          if (title) {
+            select(title)
+          }
+        } catch {
+          // Blocked storage: nothing was remembered.
         }
       })
       return () => h(DefaultTheme.Layout)
