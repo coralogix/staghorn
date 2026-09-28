@@ -57,7 +57,9 @@ hostname.
 - **Stable.** The URL is a function of your branch and project, not of what order you
   started things in. It stays bookmarkable across restarts.
 - **Parallel.** Several worktrees serve at once without colliding, and without anyone
-  having to remember that 5174 is the review branch.
+  having to remember that 5174 is the review branch. That includes the worktrees a
+  coding agent opens on your behalf, where the port arithmetic stops being tractable
+  fastest because nobody chose the order they started in.
 - **Honest cookies and origins.** `*.localhost` is a
   [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts),
   so `Secure` cookies, service workers and origin-sensitive APIs behave as they do in
