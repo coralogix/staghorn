@@ -157,15 +157,23 @@ jobs:
             console.log('dist reports ' + VERSION);
           "
 
+      # `--ignore-scripts` skips `prepublishOnly`, whose gates every step above has
+      # already run explicitly against this exact tree. It is not just redundant:
+      # npm propagates `--dry-run` to nested npm calls, so `check:pkg`'s
+      # `attw --pack .` gets a pack that writes no tarball and dies on ENOENT.
+      # `prepublishOnly` stays in package.json as the guard for a manual publish
+      # from someone's laptop, which is the case it actually exists for.
       - name: Publish (dry-run)
         if: inputs.dry_run
-        run: npm publish --dry-run --access public
+        run: npm publish --dry-run --access public --ignore-scripts
 
       # Auth is OIDC trusted publishing - no token. `--access public` is required
       # because a scoped package defaults to restricted. Provenance is automatic.
+      # Same reasoning as the dry-run step. Running the gates twice here would also
+      # rebuild dist AFTER the version assertion above, quietly voiding it.
       - name: Publish
         if: '!inputs.dry_run'
-        run: npm publish --access public
+        run: npm publish --access public --ignore-scripts
 
       # Only after publish succeeds, so a failed publish leaves the remote tag-less.
       # We deliberately do NOT commit: branch protection (verified signatures,
