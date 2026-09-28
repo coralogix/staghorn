@@ -63,8 +63,8 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "staghorn": "./dist/cli.mjs",
-    "stag": "./dist/cli.mjs"
+    "staghorn": "dist/cli.mjs",
+    "stag": "dist/cli.mjs"
   },
   "files": [
     "dist",
