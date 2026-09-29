@@ -43,7 +43,7 @@ silently stealing the first one's route.
 ## Seeing what you will get
 
 ```bash
-npx staghorn url
+npx @coralogix/staghorn url
 ```
 
 prints this checkout's hostname without starting anything: no daemon, no route

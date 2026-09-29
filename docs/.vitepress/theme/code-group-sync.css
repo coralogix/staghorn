@@ -1,0 +1,80 @@
+/*
+ * Copyright 2026 Coralogix Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Shows the remembered code-group tab from the first frame, keyed on the
+ * <html data-code-group> the <head> script in config.mts sets. Blocks have no title,
+ * only a position, so :has() finds where the chosen title sits in each group's tabs.
+ * Without :has() these rules are ignored and index.ts switches tabs after load.
+ */
+
+/* Hide every block and dim the default's label; never the chosen label, which the
+   script checks after load. */
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label[data-title='npm']) > .blocks > *,
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label[data-title='pnpm']) > .blocks > *,
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label[data-title='yarn']) > .blocks > *,
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label[data-title='bun']) > .blocks > * {
+  display: none;
+}
+
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label[data-title='npm']) input:checked + label:not([data-title='npm']),
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label[data-title='pnpm']) input:checked + label:not([data-title='pnpm']),
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label[data-title='yarn']) input:checked + label:not([data-title='yarn']),
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label[data-title='bun']) input:checked + label:not([data-title='bun']) {
+  color: var(--vp-code-tab-text-color);
+}
+
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label[data-title='npm']) input:checked + label:not([data-title='npm'])::after,
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label[data-title='pnpm']) input:checked + label:not([data-title='pnpm'])::after,
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label[data-title='yarn']) input:checked + label:not([data-title='yarn'])::after,
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label[data-title='bun']) input:checked + label:not([data-title='bun'])::after {
+  background-color: transparent;
+}
+
+/* ...then highlight the chosen label, wherever it sits... */
+html[data-code-group='npm'] .vp-code-group > .tabs > label[data-title='npm'],
+html[data-code-group='pnpm'] .vp-code-group > .tabs > label[data-title='pnpm'],
+html[data-code-group='yarn'] .vp-code-group > .tabs > label[data-title='yarn'],
+html[data-code-group='bun'] .vp-code-group > .tabs > label[data-title='bun'] {
+  color: var(--vp-code-tab-active-text-color);
+}
+
+html[data-code-group='npm'] .vp-code-group > .tabs > label[data-title='npm']::after,
+html[data-code-group='pnpm'] .vp-code-group > .tabs > label[data-title='pnpm']::after,
+html[data-code-group='yarn'] .vp-code-group > .tabs > label[data-title='yarn']::after,
+html[data-code-group='bun'] .vp-code-group > .tabs > label[data-title='bun']::after {
+  background-color: var(--vp-code-tab-active-bar-color);
+}
+
+/* ...and show the block at the chosen label's position. */
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label:nth-of-type(1)[data-title='npm']) > .blocks > :nth-child(1),
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label:nth-of-type(1)[data-title='pnpm']) > .blocks > :nth-child(1),
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label:nth-of-type(1)[data-title='yarn']) > .blocks > :nth-child(1),
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label:nth-of-type(1)[data-title='bun']) > .blocks > :nth-child(1),
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label:nth-of-type(2)[data-title='npm']) > .blocks > :nth-child(2),
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label:nth-of-type(2)[data-title='pnpm']) > .blocks > :nth-child(2),
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label:nth-of-type(2)[data-title='yarn']) > .blocks > :nth-child(2),
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label:nth-of-type(2)[data-title='bun']) > .blocks > :nth-child(2),
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label:nth-of-type(3)[data-title='npm']) > .blocks > :nth-child(3),
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label:nth-of-type(3)[data-title='pnpm']) > .blocks > :nth-child(3),
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label:nth-of-type(3)[data-title='yarn']) > .blocks > :nth-child(3),
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label:nth-of-type(3)[data-title='bun']) > .blocks > :nth-child(3),
+html[data-code-group='npm'] .vp-code-group:has(> .tabs > label:nth-of-type(4)[data-title='npm']) > .blocks > :nth-child(4),
+html[data-code-group='pnpm'] .vp-code-group:has(> .tabs > label:nth-of-type(4)[data-title='pnpm']) > .blocks > :nth-child(4),
+html[data-code-group='yarn'] .vp-code-group:has(> .tabs > label:nth-of-type(4)[data-title='yarn']) > .blocks > :nth-child(4),
+html[data-code-group='bun'] .vp-code-group:has(> .tabs > label:nth-of-type(4)[data-title='bun']) > .blocks > :nth-child(4) {
+  display: block;
+}

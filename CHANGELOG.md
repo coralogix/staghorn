@@ -1,5 +1,14 @@
 # @coralogix/staghorn
 
+Release notes for every version are on
+[GitHub Releases](https://github.com/coralogix/staghorn/releases), generated from the
+merged pull requests. This file summarises the notable ones.
+
+## 0.1.1
+
+- `staghorn -- <command>` forwards `SIGINT` and `SIGTERM` to the wrapped dev server
+  and waits for it, instead of exiting first and orphaning it (#5).
+
 ## 0.1.0
 
 Initial public release.
@@ -17,5 +26,5 @@ DNS server, no certificates.
   so a bookmark survives a degrade.
 - Optional layered configuration with per-value provenance, via
   `staghorn config --print`.
-- A programmatic API (`createDevDomain`, `resolveDevDomain`) and a `staghorn/testing`
+- A programmatic API (`createDevDomain`, `resolveDevDomain`) and an `@coralogix/staghorn/testing`
   subpath for adapter authors.

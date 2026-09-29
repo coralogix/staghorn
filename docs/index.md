@@ -23,9 +23,10 @@ hero:
 features:
   - title: Wrap what you already run
     details: >-
-      npx staghorn -- npm run dev. It runs your command unchanged, learns the real
-      port from its output, registers the route and prints the hostname. No config
-      file, no code change, no --port plumbing.
+      Install @coralogix/staghorn and put staghorn -- in front of your dev script. It
+      runs your command unchanged, learns the real port from its output, registers the
+      route and prints the hostname. No config file, no code change, no --port
+      plumbing.
   - title: Stable, not order-dependent
     details: >-
       The URL is a function of your branch and project, not of what order you started
