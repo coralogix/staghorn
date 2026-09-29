@@ -15,7 +15,7 @@ survives a degrade.
 ## Linux
 
 Linux is fully supported and lands on the shared port by default. You lose the cosmetic
-portlessness and keep everything that matters: a stable name that never drifts, and one
+port-free URL and keep everything that matters: a stable name that never drifts, and one
 constant port for every checkout.
 
 To get rung 1 on Linux:

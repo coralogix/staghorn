@@ -18,6 +18,17 @@ and works everywhere. Note that it requires internet access and is **not** a sec
 context, so `Secure` cookies and service workers will not behave as they do on
 `*.localhost`.
 
+Vite, and anything built on it, rejects hostnames it does not recognise with "Blocked
+request. This host is not allowed". It accepts `*.localhost` by default, so this only
+comes up with another tld. Allow it in your Vite config:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  server: { allowedHosts: ['.localtest.me'] },
+});
+```
+
 ## HTTPS
 
 Dev stays plain HTTP, which is fine because `*.localhost` is already a secure context as
@@ -50,7 +61,7 @@ requests to the corporate proxy. `staghorn doctor` detects this and says so.
 
 | | |
 | --- | --- |
-| **macOS** | Fully supported. Portless by default. |
-| **Linux** | Fully supported. Shared port by default; portless with a sysctl. |
-| **Windows** | Supported, less exercised. Ports below 1024 are not restricted, so portless often works; `http.sys`/IIS may own `:80`, in which case the shared port is used. |
+| **macOS** | Fully supported. No port in the URL by default. |
+| **Linux** | Fully supported. Shared port by default; no port in the URL with a sysctl. |
+| **Windows** | Supported, less exercised. Ports below 1024 are not restricted, so the port-free URL often works; `http.sys`/IIS may own `:80`, in which case the shared port is used. |
 | **Containers, WSL2** | Works with explicit configuration. Run `staghorn doctor`. |
