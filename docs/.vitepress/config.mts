@@ -123,6 +123,7 @@ export default defineConfig({
             { text: 'What is staghorn?', link: '/guide/introduction' },
             { text: 'Getting started', link: '/guide/getting-started' },
             { text: 'How it works', link: '/guide/how-it-works' },
+            { text: 'Staghorn or portless?', link: '/guide/compared-with-portless' },
           ],
         },
         {
@@ -131,6 +132,7 @@ export default defineConfig({
             { text: 'The hostname', link: '/guide/the-hostname' },
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Several dev servers', link: '/guide/services' },
+            { text: 'Monorepos and Turborepo', link: '/guide/monorepos' },
           ],
         },
         {

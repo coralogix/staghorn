@@ -5,7 +5,7 @@
 // Layers, low to high:
 //
 //   defaults
-//     < user config      $XDG_CONFIG_HOME/staghorn/config.*
+//     < user config      $XDG_CONFIG_HOME/staghorn/staghorn.config.*
 //     < project config   staghorn.config.* | package.json#staghorn
 //     < env              STAGHORN_*
 //     < CLI flags

@@ -81,6 +81,34 @@ npx @coralogix/staghorn -- npm run dev
 > resolve inside a project that already has `@coralogix/staghorn` installed. Anywhere
 > else, always use the full scoped name.
 
+## Rolling it out to a team
+
+Staghorn is meant to be adopted once, for everyone. One pull request adds it to the
+project:
+
+```diff
+  "devDependencies": {
++   "@coralogix/staghorn": "^0.1.2"
+  },
+  "scripts": {
+-   "dev": "vite"
++   "dev": "staghorn -- vite"
+  }
+```
+
+After that, every engineer's next `npm run dev` works: no `sudo`, no trust prompt, no
+certificate, no hosts-file edit, and nothing to install globally. Their command runs
+unchanged. If something about a machine gets in the way, staghorn falls back a rung and
+says so; it never blocks the dev server.
+
+Anyone who wants out sets `STAGHORN_DISABLE=1`. Anyone who needs a different setup
+puts it under `overrides` in their own `~/.config/staghorn/staghorn.config.json`, which
+beats the project's config, so the shared config never changes for one person:
+
+```json
+{ "overrides": { "tld": "localtest.me" } }
+```
+
 ## Why a hostname beats a port
 
 - **Stable.** The URL is a function of your branch and project, not of what order you
@@ -156,7 +184,7 @@ rung** - only the port appears - so a bookmark survives a degrade.
 | direct | `http://localhost:5173` | no daemon could start at all |
 
 Linux is fully supported and lands on the shared port by default. You lose the
-cosmetic portlessness and keep everything that matters: a stable name that never
+cosmetic port-free URL and keep everything that matters: a stable name that never
 drifts, and one constant port for every checkout. To get rung 1 on Linux:
 
 ```bash
@@ -275,9 +303,9 @@ registry write, no spawn, no lease - for a script that wants to decide first.
 
 | | |
 | --- | --- |
-| **macOS** | Fully supported. Portless by default. |
-| **Linux** | Fully supported. Shared port by default; portless with the sysctl above. |
-| **Windows** | Supported, less exercised. Ports below 1024 are not restricted, so portless often works; `http.sys`/IIS may own `:80`, in which case the shared port is used. |
+| **macOS** | Fully supported. No port in the URL by default. |
+| **Linux** | Fully supported. Shared port by default; no port in the URL with the sysctl above. |
+| **Windows** | Supported, less exercised. Ports below 1024 are not restricted, so the port-free URL often works; `http.sys`/IIS may own `:80`, in which case the shared port is used. |
 | **Containers, WSL2** | Works with explicit configuration. Run `staghorn doctor`. |
 
 Node 20.11 or newer. Installs cleanly under npm, pnpm, yarn (including PnP) and bun.
@@ -289,7 +317,8 @@ Node 20.11 or newer. Installs cleanly under npm, pnpm, yarn (including PnP) and 
 Safari does not implement the `*.localhost` rule, so hostnames will not resolve.
 Either use another browser, or set `tld: 'localtest.me'` - a public wildcard DNS name
 that points at `127.0.0.1`, needs no setup, and works everywhere. Note it requires
-internet access and is not a secure context.
+internet access and is not a secure context. Vite rejects hostnames it does not
+recognise, so a Vite project also needs `server: { allowedHosts: ['.localtest.me'] }`.
 
 ### HTTPS
 
