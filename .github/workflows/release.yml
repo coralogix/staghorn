@@ -117,7 +117,7 @@ jobs:
 
       # `registry-url` points npm at the public registry. No auth token is written:
       # trusted publishing supplies credentials via OIDC at publish time.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
