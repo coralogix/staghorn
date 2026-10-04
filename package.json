@@ -111,7 +111,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
-    "@types/node": "^22.15.3",
+    "@types/node": "^26.6.3",
     "publint": "^0.3.14",
     "tsup": "^8.5.0",
     "tsx": "^4.23.12",
